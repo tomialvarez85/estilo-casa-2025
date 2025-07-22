@@ -280,6 +280,38 @@ const Results = ({ results, surveyData, onRestart }) => {
             🎉 ¡Disfruta explorando estas áreas y encuentra los productos perfectos para tu hogar!
           </p>
         </div>
+
+        <div className="restart-section">
+          <button 
+            className="btn restart-btn"
+            onClick={onRestart}
+            style={{
+              backgroundColor: '#2196F3',
+              color: 'white',
+              margin: '20px 10px',
+              padding: '15px 30px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              borderRadius: '25px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#1976D2';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 12px rgba(33, 150, 243, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#2196F3';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.3)';
+            }}
+          >
+            🔄 Volver al Inicio
+          </button>
+        </div>
       </div>
     </div>
   );
