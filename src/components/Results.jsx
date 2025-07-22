@@ -126,7 +126,7 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   // Leer automáticamente cuando se muestren los resultados
   useEffect(() => {
-    // Esperar a que las voces estén disponibles
+    // Función para cargar voces y reproducir audio
     const loadVoicesAndSpeak = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
@@ -136,20 +136,23 @@ const Results = ({ results, surveyData, onRestart }) => {
         speakRecommendations();
       } else {
         // Si las voces no están disponibles, esperar un poco más
-        setTimeout(loadVoicesAndSpeak, 200);
+        setTimeout(loadVoicesAndSpeak, 100);
       }
     };
 
     // Intentar cargar voces inmediatamente
     loadVoicesAndSpeak();
 
-    // También intentar después de un delay para asegurar que las voces estén cargadas
-    const timer = setTimeout(() => {
-      loadVoicesAndSpeak();
-    }, 500);
+    // Intentar múltiples veces para asegurar que las voces estén cargadas
+    const timers = [
+      setTimeout(() => loadVoicesAndSpeak(), 200),
+      setTimeout(() => loadVoicesAndSpeak(), 500),
+      setTimeout(() => loadVoicesAndSpeak(), 1000),
+      setTimeout(() => loadVoicesAndSpeak(), 2000)
+    ];
 
     return () => {
-      clearTimeout(timer);
+      timers.forEach(timer => clearTimeout(timer));
       stopSpeaking();
     };
   }, []);
@@ -224,7 +227,24 @@ const Results = ({ results, surveyData, onRestart }) => {
             onClick={isSpeaking ? stopSpeaking : speakRecommendations}
             style={{
               backgroundColor: isSpeaking ? '#ff6b6b' : '#4CAF50',
-              margin: '10px'
+              margin: '10px',
+              padding: '15px 30px',
+              fontSize: '16px',
+              fontWeight: 'bold',
+              borderRadius: '25px',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'white',
+              boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
+              transition: 'all 0.3s ease'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 12px rgba(76, 175, 80, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
             }}
           >
             {isSpeaking ? '🔇 Detener Audio' : '🔊 Escuchar Recomendaciones'}
