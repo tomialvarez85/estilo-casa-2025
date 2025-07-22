@@ -8,10 +8,32 @@ function App() {
   const [surveyData, setSurveyData] = useState({});
   const [results, setResults] = useState(null);
 
-  const handleSurveyComplete = (data) => {
+  const handleSurveyComplete = async (data) => {
     setSurveyData(data);
     const recommendations = calculateRecommendations(data);
     setResults(recommendations);
+    
+    // Guardar la encuesta en la base de datos
+    try {
+      const response = await fetch('/api/survey', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        console.log('✅ Encuesta guardada en la base de datos:', result.message);
+      } else {
+        console.error('❌ Error al guardar encuesta:', result.message);
+      }
+    } catch (error) {
+      console.error('❌ Error de conexión al guardar encuesta:', error);
+    }
+    
     setCurrentStep('results');
   };
 
@@ -200,6 +222,7 @@ function App() {
 
   return (
     <div className="container">
+      
       {currentStep === 'welcome' && (
         <Welcome onStart={() => setCurrentStep('survey')} />
       )}
