@@ -67,15 +67,18 @@ const Results = ({ results, surveyData, onRestart }) => {
   const selectFemaleVoice = () => {
     const voices = window.speechSynthesis.getVoices();
     
+    console.log('🎤 Todas las voces disponibles:', voices.map(v => `${v.name} (${v.lang}) - ${v.default ? 'DEFAULT' : ''}`));
+    
     // Lista de nombres de voces femeninas comunes
     const femaleVoiceNames = [
       'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
       'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura',
       'helena', 'monica', 'nuria', 'paula', 'claudia', 'diana', 'elena',
-      'julia', 'rosa', 'teresa', 'angela', 'beatriz', 'cristina', 'dolores'
+      'julia', 'rosa', 'teresa', 'angela', 'beatriz', 'cristina', 'dolores',
+      'victoria', 'adriana', 'silvia', 'marta', 'irene', 'nuria', 'raquel'
     ];
     
-    // Buscar voz femenina en español
+    // Buscar voz femenina en español específicamente
     let femaleVoice = voices.find(voice => 
       voice.lang.includes('es') && 
       femaleVoiceNames.some(name => 
@@ -86,6 +89,7 @@ const Results = ({ results, surveyData, onRestart }) => {
     // Si no encuentra, buscar cualquier voz en español
     if (!femaleVoice) {
       femaleVoice = voices.find(voice => voice.lang.includes('es'));
+      console.log('🔍 Voz en español encontrada:', femaleVoice?.name);
     }
     
     // Si no hay voces en español, buscar cualquier voz femenina
@@ -95,11 +99,13 @@ const Results = ({ results, surveyData, onRestart }) => {
           voice.name.toLowerCase().includes(name)
         )
       );
+      console.log('🔍 Voz femenina encontrada:', femaleVoice?.name);
     }
     
     // Si no hay voces femeninas, usar la primera disponible
     if (!femaleVoice && voices.length > 0) {
       femaleVoice = voices[0];
+      console.log('🔍 Usando primera voz disponible:', femaleVoice?.name);
     }
     
     return femaleVoice;
@@ -108,19 +114,20 @@ const Results = ({ results, surveyData, onRestart }) => {
   // Función para leer con voz del navegador (fallback mejorado)
   const speakWithBrowserTTS = (text) => {
     if ('speechSynthesis' in window) {
+      // Cancelar cualquier reproducción anterior
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'es-ES';
-      utterance.rate = 0.85; // Un poco más lento para mejor claridad
-      utterance.pitch = 1.3; // Pitch alto para sonar más femenino
+      utterance.rate = 0.8; // Más lento para mejor claridad
+      utterance.pitch = 1.4; // Pitch más alto para sonar más femenino
       utterance.volume = 1;
 
       // Seleccionar voz de mujer
       const femaleVoice = selectFemaleVoice();
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('🎤 Voz del navegador seleccionada:', femaleVoice.name, femaleVoice.lang);
+        console.log('🎤 Voz seleccionada:', femaleVoice.name, femaleVoice.lang);
       } else {
         console.log('⚠️ No se encontró voz específica, usando voz por defecto');
       }
@@ -138,7 +145,17 @@ const Results = ({ results, surveyData, onRestart }) => {
         console.log('❌ Error en reproducción de voz:', event.error);
       };
 
+      // Forzar la reproducción
       window.speechSynthesis.speak(utterance);
+      
+      // Verificar si se está reproduciendo después de un momento
+      setTimeout(() => {
+        if (!window.speechSynthesis.speaking) {
+          console.log('⚠️ La voz no se reprodujo, intentando de nuevo...');
+          window.speechSynthesis.speak(utterance);
+        }
+      }, 100);
+      
     } else {
       console.log('❌ Speech Synthesis no soportado en este navegador');
     }
@@ -163,26 +180,30 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   // Leer automáticamente cuando se muestren los resultados
   useEffect(() => {
-    // Esperar a que las voces estén disponibles
-    const loadVoices = () => {
+    // Función para cargar voces y reproducir audio
+    const loadVoicesAndSpeak = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
-        console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
+        console.log('🎤 Voces cargadas:', voices.map(v => `${v.name} (${v.lang})`));
         
-        // Esperar 1 segundo antes de leer para que el usuario vea los resultados
-        const timer = setTimeout(() => {
-          speakRecommendations();
-        }, 1000);
-        return () => clearTimeout(timer);
+        // Reproducir audio inmediatamente
+        speakRecommendations();
       } else {
         // Si las voces no están disponibles, esperar un poco más
-        setTimeout(loadVoices, 100);
+        setTimeout(loadVoicesAndSpeak, 200);
       }
     };
 
-    loadVoices();
+    // Intentar cargar voces inmediatamente
+    loadVoicesAndSpeak();
+
+    // También intentar después de un delay para asegurar que las voces estén cargadas
+    const timer = setTimeout(() => {
+      loadVoicesAndSpeak();
+    }, 500);
 
     return () => {
+      clearTimeout(timer);
       stopSpeaking();
     };
   }, []);
