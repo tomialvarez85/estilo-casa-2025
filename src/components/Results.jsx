@@ -3,6 +3,41 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  // Función para seleccionar voz de mujer
+  const selectFemaleVoice = () => {
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Lista de nombres de voces femeninas comunes
+    const femaleVoiceNames = [
+      'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
+      'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura'
+    ];
+    
+    // Buscar voz femenina en español
+    let femaleVoice = voices.find(voice => 
+      voice.lang.includes('es') && 
+      femaleVoiceNames.some(name => 
+        voice.name.toLowerCase().includes(name)
+      )
+    );
+    
+    // Si no encuentra, buscar cualquier voz en español
+    if (!femaleVoice) {
+      femaleVoice = voices.find(voice => voice.lang.includes('es'));
+    }
+    
+    // Si no hay voces en español, buscar cualquier voz femenina
+    if (!femaleVoice) {
+      femaleVoice = voices.find(voice => 
+        femaleVoiceNames.some(name => 
+          voice.name.toLowerCase().includes(name)
+        )
+      );
+    }
+    
+    return femaleVoice;
+  };
+
   // Función para leer las recomendaciones en voz alta
   const speakRecommendations = () => {
     if ('speechSynthesis' in window) {
@@ -28,23 +63,14 @@ const Results = ({ results, surveyData, onRestart }) => {
       const utterance = new SpeechSynthesisUtterance(speechText);
       utterance.lang = 'es-ES';
       utterance.rate = 0.9;
-      utterance.pitch = 1;
+      utterance.pitch = 1.2; // Aumentar el pitch para sonar más femenino
       utterance.volume = 1;
 
       // Seleccionar voz de mujer
-      const voices = window.speechSynthesis.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.lang.includes('es') && voice.name.toLowerCase().includes('female')
-      ) || voices.find(voice => 
-        voice.lang.includes('es') && voice.name.toLowerCase().includes('mujer')
-      ) || voices.find(voice => 
-        voice.lang.includes('es') && voice.name.toLowerCase().includes('maria')
-      ) || voices.find(voice => 
-        voice.lang.includes('es')
-      );
-      
+      const femaleVoice = selectFemaleVoice();
       if (femaleVoice) {
         utterance.voice = femaleVoice;
+        console.log('Voz seleccionada:', femaleVoice.name, femaleVoice.lang);
       }
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -65,13 +91,24 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   // Leer automáticamente cuando se muestren los resultados
   useEffect(() => {
-    // Esperar 1 segundo antes de leer para que el usuario vea los resultados
-    const timer = setTimeout(() => {
-      speakRecommendations();
-    }, 1000);
+    // Esperar a que las voces estén disponibles
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        // Esperar 1 segundo antes de leer para que el usuario vea los resultados
+        const timer = setTimeout(() => {
+          speakRecommendations();
+        }, 1000);
+        return () => clearTimeout(timer);
+      } else {
+        // Si las voces no están disponibles, esperar un poco más
+        setTimeout(loadVoices, 100);
+      }
+    };
+
+    loadVoices();
 
     return () => {
-      clearTimeout(timer);
       stopSpeaking();
     };
   }, []);
