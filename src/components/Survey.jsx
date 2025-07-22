@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import Question from './Question';
+
 
 const Survey = ({ onComplete }) => {
   const [answers, setAnswers] = useState({});
