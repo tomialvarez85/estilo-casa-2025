@@ -1,23 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
 const Results = ({ results, surveyData, onRestart }) => {
-  const [timeLeft, setTimeLeft] = useState(15);
   const [isSpeaking, setIsSpeaking] = useState(false);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prevTime) => {
-        if (prevTime <= 1) {
-          clearInterval(timer);
-          onRestart();
-          return 0;
-        }
-        return prevTime - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [onRestart]);
 
   // Función para leer las recomendaciones en voz alta
   const speakRecommendations = () => {
@@ -46,6 +30,22 @@ const Results = ({ results, surveyData, onRestart }) => {
       utterance.rate = 0.9;
       utterance.pitch = 1;
       utterance.volume = 1;
+
+      // Seleccionar voz de mujer
+      const voices = window.speechSynthesis.getVoices();
+      const femaleVoice = voices.find(voice => 
+        voice.lang.includes('es') && voice.name.toLowerCase().includes('female')
+      ) || voices.find(voice => 
+        voice.lang.includes('es') && voice.name.toLowerCase().includes('mujer')
+      ) || voices.find(voice => 
+        voice.lang.includes('es') && voice.name.toLowerCase().includes('maria')
+      ) || voices.find(voice => 
+        voice.lang.includes('es')
+      );
+      
+      if (femaleVoice) {
+        utterance.voice = femaleVoice;
+      }
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
@@ -115,10 +115,6 @@ const Results = ({ results, surveyData, onRestart }) => {
   return (
     <div className="card">
       <div className="result-container">
-        <div className="timer">
-          ⏰ Reinicio automático en {timeLeft}s
-        </div>
-        
         <h1 className="result-title">🎯 Tus Recomendaciones Personalizadas</h1>
         
         <div className="recommendations">
