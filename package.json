@@ -2,18 +2,20 @@
   "name": "algoritmoexpo",
   "version": "1.0.0",
   "description": "Software de encuesta para evento de equipamiento interior de viviendas",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "start": "node server.js"
+    "start": "node server.js",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "express": "^4.18.2",
     "cors": "^2.8.5",
     "body-parser": "^1.20.2",
-    "sqlite3": "^5.1.6"
+    "@supabase/supabase-js": "^2.38.4",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
     "vite": "^4.4.9",
