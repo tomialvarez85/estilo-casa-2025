@@ -3,14 +3,71 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Función para seleccionar voz de mujer
+  // Función para usar audio pregrabado (más confiable)
+  const speakWithPreRecordedAudio = (topAreas) => {
+    // Crear mensaje personalizado basado en las áreas
+    const areaNames = topAreas.map(area => getAreaName(area.area));
+    
+    // Por ahora usamos TTS del navegador, pero aquí podrías usar archivos de audio
+    const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
+    
+    speakWithBrowserTTS(speechText);
+  };
+
+  // Función para usar Google Text-to-Speech (alternativa)
+  const speakWithGoogleTTS = async (text) => {
+    try {
+      // Usar la API de Google Text-to-Speech
+      const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          input: { text },
+          voice: {
+            languageCode: 'es-ES',
+            name: 'es-ES-Standard-A', // Voz femenina en español
+            ssmlGender: 'FEMALE'
+          },
+          audioConfig: {
+            audioEncoding: 'MP3',
+            speakingRate: 0.9,
+            pitch: 1.2
+          }
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const audioContent = data.audioContent;
+        const audioBlob = new Blob([Uint8Array.from(atob(audioContent), c => c.charCodeAt(0))], { type: 'audio/mp3' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+      }
+    } catch (error) {
+      console.log('Google TTS no disponible, usando voz del navegador');
+      speakWithBrowserTTS(text);
+    }
+  };
+
+  // Función para seleccionar voz de mujer en el navegador
   const selectFemaleVoice = () => {
     const voices = window.speechSynthesis.getVoices();
     
     // Lista de nombres de voces femeninas comunes
     const femaleVoiceNames = [
       'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
-      'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura'
+      'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura',
+      'helena', 'monica', 'nuria', 'paula', 'claudia', 'diana', 'elena'
     ];
     
     // Buscar voz femenina en español
@@ -38,39 +95,22 @@ const Results = ({ results, surveyData, onRestart }) => {
     return femaleVoice;
   };
 
-  // Función para leer las recomendaciones en voz alta
-  const speakRecommendations = () => {
+  // Función para leer con voz del navegador (fallback)
+  const speakWithBrowserTTS = (text) => {
     if ('speechSynthesis' in window) {
-      // Detener cualquier audio previo
       window.speechSynthesis.cancel();
 
-      const topAreas = results.topAreas;
-      let speechText = `Basándome en tus respuestas, te recomiendo visitar: `;
-      
-      topAreas.forEach((area, index) => {
-        const areaName = getAreaName(area.area);
-        if (index === 0) {
-          speechText += `principalmente el área de ${areaName}. `;
-        } else if (index === 1) {
-          speechText += `También te sugiero el área de ${areaName}. `;
-        } else {
-          speechText += `Y finalmente, considera el área de ${areaName}. `;
-        }
-      });
-
-      speechText += `Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
-
-      const utterance = new SpeechSynthesisUtterance(speechText);
+      const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'es-ES';
       utterance.rate = 0.9;
-      utterance.pitch = 1.2; // Aumentar el pitch para sonar más femenino
+      utterance.pitch = 1.4; // Aumentar aún más el pitch para sonar más femenino
       utterance.volume = 1;
 
       // Seleccionar voz de mujer
       const femaleVoice = selectFemaleVoice();
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Voz seleccionada:', femaleVoice.name, femaleVoice.lang);
+        console.log('Voz del navegador seleccionada:', femaleVoice.name, femaleVoice.lang);
       }
 
       utterance.onstart = () => setIsSpeaking(true);
@@ -81,12 +121,20 @@ const Results = ({ results, surveyData, onRestart }) => {
     }
   };
 
+  // Función para leer las recomendaciones en voz alta
+  const speakRecommendations = () => {
+    const topAreas = results.topAreas;
+    
+    // Usar audio pregrabado para mejor calidad
+    speakWithPreRecordedAudio(topAreas);
+  };
+
   // Función para detener el audio
   const stopSpeaking = () => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
-      setIsSpeaking(false);
     }
+    setIsSpeaking(false);
   };
 
   // Leer automáticamente cuando se muestren los resultados
