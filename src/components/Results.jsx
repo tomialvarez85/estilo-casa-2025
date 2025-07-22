@@ -3,64 +3,7 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Función para usar ElevenLabs API (voz femenina de alta calidad)
-  const speakWithElevenLabs = async (text) => {
-    try {
-      // ElevenLabs API Key (gratuita para uso limitado)
-      const ELEVENLABS_API_KEY = '21m00Tcm4TlvDq8ikWAM'; // API key pública de demo
-      
-      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': ELEVENLABS_API_KEY
-        },
-        body: JSON.stringify({
-          text: text,
-          model_id: 'eleven_multilingual_v2',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.5
-          }
-        })
-      });
-
-      if (response.ok) {
-        const audioBlob = await response.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        const audio = new Audio(audioUrl);
-        audio.play();
-        
-        setIsSpeaking(true);
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-        
-        console.log('✅ Voz ElevenLabs reproducida exitosamente');
-      } else {
-        throw new Error('ElevenLabs API error');
-      }
-    } catch (error) {
-      console.log('❌ ElevenLabs no disponible, usando voz del navegador');
-      speakWithBrowserTTS(text);
-    }
-  };
-
-  // Función para usar audio pregrabado (más confiable)
-  const speakWithPreRecordedAudio = (topAreas) => {
-    // Crear mensaje personalizado basado en las áreas
-    const areaNames = topAreas.map(area => getAreaName(area.area));
-    
-    const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
-    
-    // Intentar primero con ElevenLabs, luego fallback al navegador
-    speakWithElevenLabs(speechText);
-  };
-
-  // Función para usar Google Text-to-Speech (alternativa)
+  // Función para usar Google Text-to-Speech (voz femenina de alta calidad)
   const speakWithGoogleTTS = async (text) => {
     try {
       // Usar la API de Google Text-to-Speech
@@ -98,14 +41,29 @@ const Results = ({ results, surveyData, onRestart }) => {
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
         };
+        
+        console.log('✅ Voz Google TTS reproducida exitosamente');
+      } else {
+        throw new Error('Google TTS API error');
       }
     } catch (error) {
-      console.log('Google TTS no disponible, usando voz del navegador');
+      console.log('❌ Google TTS no disponible, usando voz del navegador');
       speakWithBrowserTTS(text);
     }
   };
 
-  // Función para seleccionar voz de mujer en el navegador
+  // Función para usar audio pregrabado (más confiable)
+  const speakWithPreRecordedAudio = (topAreas) => {
+    // Crear mensaje personalizado basado en las áreas
+    const areaNames = topAreas.map(area => getAreaName(area.area));
+    
+    const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
+    
+    // Intentar primero con Google TTS, luego fallback al navegador
+    speakWithGoogleTTS(speechText);
+  };
+
+  // Función para seleccionar voz de mujer en el navegador (mejorada)
   const selectFemaleVoice = () => {
     const voices = window.speechSynthesis.getVoices();
     
@@ -113,7 +71,8 @@ const Results = ({ results, surveyData, onRestart }) => {
     const femaleVoiceNames = [
       'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
       'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura',
-      'helena', 'monica', 'nuria', 'paula', 'claudia', 'diana', 'elena'
+      'helena', 'monica', 'nuria', 'paula', 'claudia', 'diana', 'elena',
+      'julia', 'rosa', 'teresa', 'angela', 'beatriz', 'cristina', 'dolores'
     ];
     
     // Buscar voz femenina en español
@@ -138,32 +97,50 @@ const Results = ({ results, surveyData, onRestart }) => {
       );
     }
     
+    // Si no hay voces femeninas, usar la primera disponible
+    if (!femaleVoice && voices.length > 0) {
+      femaleVoice = voices[0];
+    }
+    
     return femaleVoice;
   };
 
-  // Función para leer con voz del navegador (fallback)
+  // Función para leer con voz del navegador (fallback mejorado)
   const speakWithBrowserTTS = (text) => {
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'es-ES';
-      utterance.rate = 0.9;
-      utterance.pitch = 1.4; // Aumentar aún más el pitch para sonar más femenino
+      utterance.rate = 0.85; // Un poco más lento para mejor claridad
+      utterance.pitch = 1.3; // Pitch alto para sonar más femenino
       utterance.volume = 1;
 
       // Seleccionar voz de mujer
       const femaleVoice = selectFemaleVoice();
       if (femaleVoice) {
         utterance.voice = femaleVoice;
-        console.log('Voz del navegador seleccionada:', femaleVoice.name, femaleVoice.lang);
+        console.log('🎤 Voz del navegador seleccionada:', femaleVoice.name, femaleVoice.lang);
+      } else {
+        console.log('⚠️ No se encontró voz específica, usando voz por defecto');
       }
 
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
+      utterance.onstart = () => {
+        setIsSpeaking(true);
+        console.log('🔊 Iniciando reproducción de voz');
+      };
+      utterance.onend = () => {
+        setIsSpeaking(false);
+        console.log('✅ Reproducción de voz completada');
+      };
+      utterance.onerror = (event) => {
+        setIsSpeaking(false);
+        console.log('❌ Error en reproducción de voz:', event.error);
+      };
 
       window.speechSynthesis.speak(utterance);
+    } else {
+      console.log('❌ Speech Synthesis no soportado en este navegador');
     }
   };
 
@@ -171,7 +148,7 @@ const Results = ({ results, surveyData, onRestart }) => {
   const speakRecommendations = () => {
     const topAreas = results.topAreas;
     
-    // Usar ElevenLabs para mejor calidad de voz femenina
+    // Usar Google TTS para mejor calidad de voz femenina
     speakWithPreRecordedAudio(topAreas);
   };
 
@@ -181,6 +158,7 @@ const Results = ({ results, surveyData, onRestart }) => {
       window.speechSynthesis.cancel();
     }
     setIsSpeaking(false);
+    console.log('🔇 Audio detenido');
   };
 
   // Leer automáticamente cuando se muestren los resultados
@@ -189,6 +167,8 @@ const Results = ({ results, surveyData, onRestart }) => {
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
+        console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
+        
         // Esperar 1 segundo antes de leer para que el usuario vea los resultados
         const timer = setTimeout(() => {
           speakRecommendations();
