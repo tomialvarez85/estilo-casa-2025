@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 const Results = ({ results, surveyData, onRestart }) => {
   const [timeLeft, setTimeLeft] = useState(15);
+  const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -18,40 +19,97 @@ const Results = ({ results, surveyData, onRestart }) => {
     return () => clearInterval(timer);
   }, [onRestart]);
 
+  // Función para leer las recomendaciones en voz alta
+  const speakRecommendations = () => {
+    if ('speechSynthesis' in window) {
+      // Detener cualquier audio previo
+      window.speechSynthesis.cancel();
+
+      const topAreas = results.topAreas;
+      let speechText = `Basándome en tus respuestas, te recomiendo visitar: `;
+      
+      topAreas.forEach((area, index) => {
+        const areaName = getAreaName(area.area);
+        if (index === 0) {
+          speechText += `principalmente el área de ${areaName}. `;
+        } else if (index === 1) {
+          speechText += `También te sugiero el área de ${areaName}. `;
+        } else {
+          speechText += `Y finalmente, considera el área de ${areaName}. `;
+        }
+      });
+
+      speechText += `Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
+
+      const utterance = new SpeechSynthesisUtterance(speechText);
+      utterance.lang = 'es-ES';
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      utterance.volume = 1;
+
+      utterance.onstart = () => setIsSpeaking(true);
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+
+      window.speechSynthesis.speak(utterance);
+    }
+  };
+
+  // Función para detener el audio
+  const stopSpeaking = () => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+  };
+
+  // Leer automáticamente cuando se muestren los resultados
+  useEffect(() => {
+    // Esperar 1 segundo antes de leer para que el usuario vea los resultados
+    const timer = setTimeout(() => {
+      speakRecommendations();
+    }, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      stopSpeaking();
+    };
+  }, []);
+
   const getAreaName = (area) => {
-    const names = {
-      cocina: 'Cocina',
+    const areaNames = {
+      cocina: 'Cocina y Electrodomésticos',
       living: 'Living y Comedor',
-      dormitorio: 'Dormitorio',
-      bano: 'Baño',
-      oficina: 'Oficina en Casa',
+      dormitorio: 'Dormitorio y Descanso',
+      bano: 'Baño y Sanitarios',
+      oficina: 'Oficina y Trabajo',
       exterior: 'Exterior y Jardín'
     };
-    return names[area] || area;
+    return areaNames[area] || area;
   };
 
   const getAreaIcon = (area) => {
-    const icons = {
+    const areaIcons = {
       cocina: '🍳',
       living: '🛋️',
       dormitorio: '🛏️',
       bano: '🚿',
       oficina: '💼',
-      exterior: '🌳'
+      exterior: '🌿'
     };
-    return icons[area] || '📍';
+    return areaIcons[area] || '🏠';
   };
 
   const getAreaDescription = (area) => {
-    const descriptions = {
-      cocina: 'Electrodomésticos, muebles de cocina, islas centrales y soluciones de almacenamiento',
-      living: 'Sofás, mesas de centro, iluminación y decoración para espacios sociales',
-      dormitorio: 'Camas, roperos, textiles y accesorios para el descanso',
-      bano: 'Sanitarios, grifería, muebles de baño y accesorios',
-      oficina: 'Escritorios, sillas ergonómicas y soluciones de almacenamiento para trabajo',
-      exterior: 'Muebles de jardín, parrillas y decoración exterior'
+    const areaDescriptions = {
+      cocina: 'Encuentra todo para tu cocina: electrodomésticos, muebles y accesorios.',
+      living: 'Muebles, decoración y elementos para crear el living de tus sueños.',
+      dormitorio: 'Camas, roperos y todo para un dormitorio confortable y elegante.',
+      bano: 'Sanitarios, grifería y accesorios para renovar tu baño.',
+      oficina: 'Muebles y equipamiento para crear tu espacio de trabajo ideal.',
+      exterior: 'Muebles de jardín, plantas y decoración para exteriores.'
     };
-    return descriptions[area] || 'Productos especializados para esta área';
+    return areaDescriptions[area] || 'Productos especializados para esta área.';
   };
 
   return (
@@ -60,90 +118,60 @@ const Results = ({ results, surveyData, onRestart }) => {
         <div className="timer">
           ⏰ Reinicio automático en {timeLeft}s
         </div>
-
-        <h1 className="result-title">🎯 Tus Áreas Recomendadas</h1>
-        <p className="result-description">
-          Basándonos en tus respuestas, te recomendamos visitar estas áreas del evento 
-          donde encontrarás los productos más relevantes para tu proyecto.
-        </p>
-
+        
+        <h1 className="result-title">🎯 Tus Recomendaciones Personalizadas</h1>
+        
         <div className="recommendations">
-          {results.topAreas.map(({ area, score }, index) => (
-            <div key={area} className="area-card" style={{ 
-              background: index === 0 
-                ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' 
-                : index === 1 
-                ? 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
-                : 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
-            }}>
-              <div className="option-icon">{getAreaIcon(area)}</div>
-              <h2 className="area-title">
-                {index + 1}. {getAreaName(area)}
-              </h2>
-              <p className="area-description">
-                {getAreaDescription(area)}
-              </p>
-              <div style={{ 
-                marginTop: '15px',
-                fontSize: '14px',
-                opacity: 0.8
-              }}>
-                Relevancia: {Math.round((score / 15) * 100)}%
+          <h2>📍 Áreas Recomendadas para Visitar:</h2>
+          
+          {results.topAreas.map((area, index) => (
+            <div key={area.area} className="recommendation-item">
+              <div className="area-card">
+                <div className="area-icon">{getAreaIcon(area.area)}</div>
+                <div className="area-content">
+                  <h3 className="area-title">
+                    {index + 1}. {getAreaName(area.area)}
+                  </h3>
+                  <p className="area-description">
+                    {getAreaDescription(area.area)}
+                  </p>
+                  <div className="area-score">
+                    Puntuación: {area.score} puntos
+                  </div>
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        <div style={{ marginTop: '40px' }}>
-          <h2 className="question-title">📋 Productos Específicos Recomendados</h2>
-          
-          <div className="recommendations">
-            {results.recommendations.map((rec, index) => (
-              <div key={index} className="recommendation-item">
-                <h3 className="recommendation-title">{rec.title}</h3>
-                <p className="recommendation-description">{rec.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="area-card" style={{ marginTop: '40px' }}>
-          <h2 className="area-title">🗺️ Plan de Visita Sugerido</h2>
-          <p className="area-description">
-            Te recomendamos visitar las áreas en el siguiente orden para maximizar tu experiencia:
-          </p>
-          
-          <div style={{ marginTop: '20px' }}>
-            {results.topAreas.map(({ area }, index) => (
-              <div key={area} style={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                margin: '10px 0',
-                padding: '10px',
-                background: 'rgba(255,255,255,0.1)',
-                borderRadius: '10px'
-              }}>
-                <span style={{ 
-                  fontSize: '24px', 
-                  marginRight: '15px' 
-                }}>
-                  {getAreaIcon(area)}
-                </span>
-                <div>
-                  <strong>{index + 1}. {getAreaName(area)}</strong>
-                  <div style={{ fontSize: '14px', opacity: 0.8 }}>
-                    {getAreaDescription(area)}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ marginTop: '40px', textAlign: 'center' }}>
-          <button className="btn" onClick={onRestart}>
-            Realizar Nueva Encuesta
+        <div className="voice-controls">
+          <button 
+            className={`btn ${isSpeaking ? 'speaking' : ''}`}
+            onClick={isSpeaking ? stopSpeaking : speakRecommendations}
+            style={{
+              backgroundColor: isSpeaking ? '#ff6b6b' : '#4CAF50',
+              margin: '10px'
+            }}
+          >
+            {isSpeaking ? '🔇 Detener Audio' : '🔊 Escuchar Recomendaciones'}
           </button>
+        </div>
+
+        <div className="survey-summary">
+          <h3>📋 Resumen de tus Respuestas:</h3>
+          <p><strong>Tipo de vivienda:</strong> {surveyData.tipoVivienda}</p>
+          <p><strong>Estilo preferido:</strong> {surveyData.estilo}</p>
+          <p><strong>Presupuesto:</strong> {surveyData.presupuesto}</p>
+          <p><strong>Prioridad:</strong> {surveyData.prioridad}</p>
+        </div>
+
+        <div className="result-footer">
+          <p className="result-note">
+            💡 Estas recomendaciones están basadas en un algoritmo inteligente que analiza tus preferencias y necesidades específicas.
+          </p>
+          <p className="result-note">
+            🎉 ¡Disfruta explorando estas áreas y encuentra los productos perfectos para tu hogar!
+          </p>
         </div>
       </div>
     </div>

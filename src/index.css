@@ -501,3 +501,125 @@ body {
     grid-template-columns: 1fr;
   }
 } 
+
+/* Estilos para controles de voz */
+.voice-controls {
+  text-align: center;
+  margin: 20px 0;
+  padding: 15px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+.voice-controls .btn {
+  font-size: 16px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.voice-controls .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
+.voice-controls .btn.speaking {
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Mejoras en los resultados */
+.recommendation-item {
+  margin-bottom: 20px;
+}
+
+.area-card {
+  display: flex;
+  align-items: flex-start;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 15px;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.2);
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.area-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(102, 126, 234, 0.3);
+}
+
+.area-icon {
+  font-size: 48px;
+  margin-right: 20px;
+  flex-shrink: 0;
+}
+
+.area-content {
+  flex: 1;
+}
+
+.area-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 10px 0;
+  color: white;
+}
+
+.area-description {
+  font-size: 16px;
+  line-height: 1.6;
+  margin: 0 0 15px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.area-score {
+  font-size: 14px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.2);
+  padding: 5px 12px;
+  border-radius: 20px;
+  display: inline-block;
+}
+
+.survey-summary {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 15px;
+  margin: 20px 0;
+}
+
+.survey-summary h3 {
+  margin: 0 0 15px 0;
+  color: white;
+  font-size: 18px;
+}
+
+.survey-summary p {
+  margin: 8px 0;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.result-footer {
+  text-align: center;
+  margin-top: 30px;
+}
+
+.result-note {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 10px 0;
+  line-height: 1.6;
+} 
