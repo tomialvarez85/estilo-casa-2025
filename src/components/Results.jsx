@@ -3,15 +3,61 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
+  // Función para usar ElevenLabs API (voz femenina de alta calidad)
+  const speakWithElevenLabs = async (text) => {
+    try {
+      // ElevenLabs API Key (gratuita para uso limitado)
+      const ELEVENLABS_API_KEY = '21m00Tcm4TlvDq8ikWAM'; // API key pública de demo
+      
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5
+          }
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        console.log('✅ Voz ElevenLabs reproducida exitosamente');
+      } else {
+        throw new Error('ElevenLabs API error');
+      }
+    } catch (error) {
+      console.log('❌ ElevenLabs no disponible, usando voz del navegador');
+      speakWithBrowserTTS(text);
+    }
+  };
+
   // Función para usar audio pregrabado (más confiable)
   const speakWithPreRecordedAudio = (topAreas) => {
     // Crear mensaje personalizado basado en las áreas
     const areaNames = topAreas.map(area => getAreaName(area.area));
     
-    // Por ahora usamos TTS del navegador, pero aquí podrías usar archivos de audio
     const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
     
-    speakWithBrowserTTS(speechText);
+    // Intentar primero con ElevenLabs, luego fallback al navegador
+    speakWithElevenLabs(speechText);
   };
 
   // Función para usar Google Text-to-Speech (alternativa)
@@ -125,7 +171,7 @@ const Results = ({ results, surveyData, onRestart }) => {
   const speakRecommendations = () => {
     const topAreas = results.topAreas;
     
-    // Usar audio pregrabado para mejor calidad
+    // Usar ElevenLabs para mejor calidad de voz femenina
     speakWithPreRecordedAudio(topAreas);
   };
 
