@@ -3,20 +3,20 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Función para usar audio pregrabado con voz femenina (solución práctica)
-  const speakWithPreRecordedAudio = () => {
+  // Función para leer las recomendaciones en voz alta
+  const speakRecommendations = () => {
     const topAreas = results.topAreas;
     const areaNames = topAreas.map(area => getAreaName(area.area));
     
     // Crear mensaje personalizado basado en las áreas
     const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
     
-    // Usar Web Speech API con configuración optimizada para voz femenina
-    speakWithOptimizedTTS(speechText);
+    // Usar Web Speech API con selección inteligente de voz
+    speakWithTTS(speechText);
   };
 
-  // Función para usar Web Speech API optimizada para voz femenina
-  const speakWithOptimizedTTS = (text) => {
+  // Función para usar Web Speech API con selección inteligente de voz
+  const speakWithTTS = (text) => {
     if ('speechSynthesis' in window) {
       // Cancelar cualquier reproducción anterior
       window.speechSynthesis.cancel();
@@ -24,14 +24,13 @@ const Results = ({ results, surveyData, onRestart }) => {
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.lang = 'es-ES';
       utterance.rate = 0.85; // Velocidad ligeramente más lenta
-      utterance.pitch = 1.3; // Pitch alto para sonar más femenino
       utterance.volume = 1;
 
-      // Intentar seleccionar una voz femenina
+      // Obtener todas las voces disponibles
       const voices = window.speechSynthesis.getVoices();
       console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
       
-      // Buscar voces que suenen más femeninas
+      // Lista de nombres de voces femeninas
       const femaleVoiceNames = [
         'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
         'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura',
@@ -48,9 +47,10 @@ const Results = ({ results, surveyData, onRestart }) => {
         )
       );
       
-      // Si no encuentra, buscar cualquier voz en español
+      // Si no encuentra voz femenina, buscar cualquier voz en español
       if (!selectedVoice) {
         selectedVoice = voices.find(voice => voice.lang.includes('es'));
+        console.log('🔍 Voz en español encontrada:', selectedVoice?.name);
       }
       
       // Si no hay voces en español, buscar cualquier voz femenina
@@ -60,16 +60,26 @@ const Results = ({ results, surveyData, onRestart }) => {
             voice.name.toLowerCase().includes(name)
           )
         );
+        console.log('🔍 Voz femenina encontrada:', selectedVoice?.name);
       }
       
-      // Si no hay voces femeninas, usar la primera disponible
+      // Si no hay voces femeninas, usar la primera disponible (puede ser masculina)
       if (!selectedVoice && voices.length > 0) {
         selectedVoice = voices[0];
+        console.log('🔍 Usando primera voz disponible:', selectedVoice?.name);
       }
       
       if (selectedVoice) {
         utterance.voice = selectedVoice;
-        console.log('🎤 Voz seleccionada:', selectedVoice.name, selectedVoice.lang);
+        
+        // Ajustar pitch según el tipo de voz
+        if (femaleVoiceNames.some(name => selectedVoice.name.toLowerCase().includes(name))) {
+          utterance.pitch = 1.3; // Pitch alto para voz femenina
+          console.log('🎤 Voz femenina seleccionada:', selectedVoice.name, selectedVoice.lang);
+        } else {
+          utterance.pitch = 1.0; // Pitch normal para voz masculina
+          console.log('🎤 Voz masculina seleccionada:', selectedVoice.name, selectedVoice.lang);
+        }
       }
 
       utterance.onstart = () => {
@@ -103,11 +113,6 @@ const Results = ({ results, surveyData, onRestart }) => {
       // Mostrar el texto como alternativa
       alert(`Recomendaciones: ${text}`);
     }
-  };
-
-  // Función para leer las recomendaciones en voz alta
-  const speakRecommendations = () => {
-    speakWithPreRecordedAudio();
   };
 
   // Función para detener el audio
