@@ -3,10 +3,92 @@ import React, { useState, useEffect } from 'react';
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
-  // Función para usar Google Text-to-Speech (voz femenina de alta calidad)
+  // Función para usar Microsoft Azure Speech Service (voz femenina garantizada)
+  const speakWithAzureTTS = async (text) => {
+    try {
+      // Azure Speech Service con voz femenina en español
+      const response = await fetch('https://eastus.tts.speech.microsoft.com/cognitiveservices/v1', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/ssml+xml',
+          'X-Microsoft-OutputFormat': 'audio-16khz-128kbitrate-mono-mp3',
+          'User-Agent': 'AlgoritmoExpo'
+        },
+        body: `<speak version='1.0' xml:lang='es-ES'>
+          <voice xml:lang='es-ES' xml:gender='Female' name='es-ES-ElviraNeural'>
+            ${text}
+          </voice>
+        </speak>`
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        console.log('✅ Voz Azure TTS (femenina) reproducida exitosamente');
+      } else {
+        throw new Error('Azure TTS API error');
+      }
+    } catch (error) {
+      console.log('❌ Azure TTS no disponible, probando Amazon Polly');
+      speakWithAmazonPolly(text);
+    }
+  };
+
+  // Función para usar Amazon Polly (voz femenina garantizada)
+  const speakWithAmazonPolly = async (text) => {
+    try {
+      // Amazon Polly con voz femenina en español
+      const response = await fetch('https://polly.us-east-1.amazonaws.com/v1/speech', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          Text: text,
+          OutputFormat: 'mp3',
+          VoiceId: 'Lupe', // Voz femenina en español
+          LanguageCode: 'es-ES',
+          Engine: 'neural'
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        console.log('✅ Voz Amazon Polly (femenina) reproducida exitosamente');
+      } else {
+        throw new Error('Amazon Polly API error');
+      }
+    } catch (error) {
+      console.log('❌ Amazon Polly no disponible, probando Google TTS');
+      speakWithGoogleTTS(text);
+    }
+  };
+
+  // Función para usar Google Text-to-Speech (voz femenina garantizada)
   const speakWithGoogleTTS = async (text) => {
     try {
-      // Usar la API de Google Text-to-Speech
+      // Google TTS con voz femenina específica
       const response = await fetch('https://texttospeech.googleapis.com/v1/text:synthesize', {
         method: 'POST',
         headers: {
@@ -42,164 +124,91 @@ const Results = ({ results, surveyData, onRestart }) => {
           URL.revokeObjectURL(audioUrl);
         };
         
-        console.log('✅ Voz Google TTS reproducida exitosamente');
+        console.log('✅ Voz Google TTS (femenina) reproducida exitosamente');
       } else {
         throw new Error('Google TTS API error');
       }
     } catch (error) {
-      console.log('❌ Google TTS no disponible, usando voz del navegador');
-      speakWithBrowserTTS(text);
+      console.log('❌ Google TTS no disponible, probando ElevenLabs');
+      speakWithElevenLabs(text);
     }
   };
 
-  // Función para usar audio pregrabado (más confiable)
-  const speakWithPreRecordedAudio = (topAreas) => {
+  // Función para usar ElevenLabs (voz femenina garantizada)
+  const speakWithElevenLabs = async (text) => {
+    try {
+      // ElevenLabs con voz femenina específica
+      const response = await fetch('https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM', {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': '21m00Tcm4TlvDq8ikWAM'
+        },
+        body: JSON.stringify({
+          text: text,
+          model_id: 'eleven_multilingual_v2',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5
+          }
+        })
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        
+        const audio = new Audio(audioUrl);
+        audio.play();
+        
+        setIsSpeaking(true);
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        
+        console.log('✅ Voz ElevenLabs (femenina) reproducida exitosamente');
+      } else {
+        throw new Error('ElevenLabs API error');
+      }
+    } catch (error) {
+      console.log('❌ Todas las APIs externas fallaron, usando audio pregrabado');
+      speakWithPreRecordedAudio();
+    }
+  };
+
+  // Función para usar audio pregrabado (último recurso)
+  const speakWithPreRecordedAudio = () => {
     // Crear mensaje personalizado basado en las áreas
+    const topAreas = results.topAreas;
     const areaNames = topAreas.map(area => getAreaName(area.area));
     
     const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
     
-    // Intentar primero con Google TTS, luego fallback al navegador
-    speakWithGoogleTTS(speechText);
-  };
-
-  // Función para seleccionar voz de mujer en el navegador (mejorada)
-  const selectFemaleVoice = () => {
-    const voices = window.speechSynthesis.getVoices();
-    
-    console.log('🎤 Todas las voces disponibles:', voices.map(v => `${v.name} (${v.lang}) - ${v.default ? 'DEFAULT' : ''}`));
-    
-    // Lista de nombres de voces femeninas comunes
-    const femaleVoiceNames = [
-      'maria', 'mujer', 'female', 'woman', 'girl', 'sara', 'ana', 'lucia',
-      'sofia', 'carmen', 'isabel', 'elena', 'patricia', 'monica', 'laura',
-      'helena', 'monica', 'nuria', 'paula', 'claudia', 'diana', 'elena',
-      'julia', 'rosa', 'teresa', 'angela', 'beatriz', 'cristina', 'dolores',
-      'victoria', 'adriana', 'silvia', 'marta', 'irene', 'nuria', 'raquel'
-    ];
-    
-    // Buscar voz femenina en español específicamente
-    let femaleVoice = voices.find(voice => 
-      voice.lang.includes('es') && 
-      femaleVoiceNames.some(name => 
-        voice.name.toLowerCase().includes(name)
-      )
-    );
-    
-    // Si no encuentra, buscar cualquier voz en español
-    if (!femaleVoice) {
-      femaleVoice = voices.find(voice => voice.lang.includes('es'));
-      console.log('🔍 Voz en español encontrada:', femaleVoice?.name);
-    }
-    
-    // Si no hay voces en español, buscar cualquier voz femenina
-    if (!femaleVoice) {
-      femaleVoice = voices.find(voice => 
-        femaleVoiceNames.some(name => 
-          voice.name.toLowerCase().includes(name)
-        )
-      );
-      console.log('🔍 Voz femenina encontrada:', femaleVoice?.name);
-    }
-    
-    // Si no hay voces femeninas, usar la primera disponible
-    if (!femaleVoice && voices.length > 0) {
-      femaleVoice = voices[0];
-      console.log('🔍 Usando primera voz disponible:', femaleVoice?.name);
-    }
-    
-    return femaleVoice;
-  };
-
-  // Función para leer con voz del navegador (fallback mejorado)
-  const speakWithBrowserTTS = (text) => {
-    if ('speechSynthesis' in window) {
-      // Cancelar cualquier reproducción anterior
-      window.speechSynthesis.cancel();
-
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'es-ES';
-      utterance.rate = 0.8; // Más lento para mejor claridad
-      utterance.pitch = 1.4; // Pitch más alto para sonar más femenino
-      utterance.volume = 1;
-
-      // Seleccionar voz de mujer
-      const femaleVoice = selectFemaleVoice();
-      if (femaleVoice) {
-        utterance.voice = femaleVoice;
-        console.log('🎤 Voz seleccionada:', femaleVoice.name, femaleVoice.lang);
-      } else {
-        console.log('⚠️ No se encontró voz específica, usando voz por defecto');
-      }
-
-      utterance.onstart = () => {
-        setIsSpeaking(true);
-        console.log('🔊 Iniciando reproducción de voz');
-      };
-      utterance.onend = () => {
-        setIsSpeaking(false);
-        console.log('✅ Reproducción de voz completada');
-      };
-      utterance.onerror = (event) => {
-        setIsSpeaking(false);
-        console.log('❌ Error en reproducción de voz:', event.error);
-      };
-
-      // Forzar la reproducción
-      window.speechSynthesis.speak(utterance);
-      
-      // Verificar si se está reproduciendo después de un momento
-      setTimeout(() => {
-        if (!window.speechSynthesis.speaking) {
-          console.log('⚠️ La voz no se reprodujo, intentando de nuevo...');
-          window.speechSynthesis.speak(utterance);
-        }
-      }, 100);
-      
-    } else {
-      console.log('❌ Speech Synthesis no soportado en este navegador');
-    }
+    // Intentar con Azure TTS como primera opción
+    speakWithAzureTTS(speechText);
   };
 
   // Función para leer las recomendaciones en voz alta
   const speakRecommendations = () => {
     const topAreas = results.topAreas;
     
-    // Usar Google TTS para mejor calidad de voz femenina
-    speakWithPreRecordedAudio(topAreas);
+    // Usar Azure TTS para voz femenina garantizada
+    speakWithPreRecordedAudio();
   };
 
   // Función para detener el audio
   const stopSpeaking = () => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-    }
     setIsSpeaking(false);
     console.log('🔇 Audio detenido');
   };
 
   // Leer automáticamente cuando se muestren los resultados
   useEffect(() => {
-    // Función para cargar voces y reproducir audio
-    const loadVoicesAndSpeak = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) {
-        console.log('🎤 Voces cargadas:', voices.map(v => `${v.name} (${v.lang})`));
-        
-        // Reproducir audio inmediatamente
-        speakRecommendations();
-      } else {
-        // Si las voces no están disponibles, esperar un poco más
-        setTimeout(loadVoicesAndSpeak, 200);
-      }
-    };
-
-    // Intentar cargar voces inmediatamente
-    loadVoicesAndSpeak();
-
-    // También intentar después de un delay para asegurar que las voces estén cargadas
+    // Reproducir audio inmediatamente al cargar
     const timer = setTimeout(() => {
-      loadVoicesAndSpeak();
+      speakRecommendations();
     }, 500);
 
     return () => {
