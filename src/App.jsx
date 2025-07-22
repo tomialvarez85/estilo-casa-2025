@@ -222,7 +222,6 @@ function App() {
 
   return (
     <div className="container">
-      
       {currentStep === 'welcome' && (
         <Welcome onStart={() => setCurrentStep('survey')} />
       )}

@@ -108,8 +108,9 @@ const Survey = ({ onComplete }) => {
         <button 
           className="btn" 
           onClick={handleSubmit}
+          disabled={answeredCount < totalQuestions}
           style={{
-            backgroundColor: answeredCount < totalQuestions ? '#ccc' : '#667eea',
+            opacity: answeredCount < totalQuestions ? 0.6 : 1,
             cursor: answeredCount < totalQuestions ? 'not-allowed' : 'pointer'
           }}
         >
