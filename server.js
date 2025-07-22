@@ -2,31 +2,51 @@ const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const path = require('path');
-const { createClient } = require('@supabase/supabase-js');
+const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Configurar Supabase con nombres de variables diferentes
-const supabaseUrl = process.env.DATABASE_URL;
-const supabaseKey = process.env.DATABASE_KEY;
+// Configurar MongoDB Atlas
+const mongoUrl = process.env.MONGODB_URI;
+const dbName = 'estilo-casa';
+const collectionName = 'encuestas';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('❌ Error: DATABASE_URL y DATABASE_KEY deben estar configurados en las variables de entorno');
+if (!mongoUrl) {
+  console.error('❌ Error: MONGODB_URI debe estar configurado en las variables de entorno');
   process.exit(1);
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+let db;
 
-// Verificar conexión a Supabase
-supabase.from('encuestas').select('count').limit(1)
-  .then(() => {
-    console.log('✅ Conectado a Supabase:', supabaseUrl);
-  })
-  .catch((error) => {
-    console.error('❌ Error conectando a Supabase:', error.message);
-  });
+// Conectar a MongoDB con configuración SSL
+async function connectToMongo() {
+  try {
+    const client = new MongoClient(mongoUrl, {
+      serverSelectionTimeoutMS: 10000,
+      socketTimeoutMS: 45000,
+    });
+    
+    await client.connect();
+    db = client.db(dbName);
+    console.log('✅ Conectado a MongoDB Atlas');
+    
+    // Crear índice para timestamp si no existe
+    await db.collection(collectionName).createIndex({ timestamp: -1 });
+    
+    return client;
+  } catch (error) {
+    console.error('❌ Error conectando a MongoDB:', error.message);
+    process.exit(1);
+  }
+}
+
+// Inicializar conexión
+let mongoClient;
+connectToMongo().then(client => {
+  mongoClient = client;
+});
 
 // Middleware
 app.use(cors());
@@ -39,33 +59,22 @@ app.post('/api/survey', async (req, res) => {
     const surveyData = req.body;
     const { tipoVivienda, estilo, presupuesto, prioridad } = surveyData;
 
-    const { data, error } = await supabase
-      .from('encuestas')
-      .insert([
-        {
-          tipo_vivienda: tipoVivienda,
-          estilo: estilo,
-          presupuesto: presupuesto,
-          prioridad: prioridad
-        }
-      ])
-      .select();
+    const encuesta = {
+      timestamp: new Date(),
+      tipo_vivienda: tipoVivienda,
+      estilo: estilo,
+      presupuesto: presupuesto,
+      prioridad: prioridad
+    };
 
-    if (error) {
-      console.error('❌ Error al guardar encuesta:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error al guardar la encuesta en Supabase',
-        error: error.message
-      });
-    } else {
-      console.log('✅ Encuesta guardada en Supabase:', data[0]);
-      res.json({
-        success: true,
-        message: 'Encuesta guardada exitosamente en Supabase',
-        responseId: data[0].id
-      });
-    }
+    const result = await db.collection(collectionName).insertOne(encuesta);
+
+    console.log('✅ Encuesta guardada en MongoDB:', result.insertedId);
+    res.json({
+      success: true,
+      message: 'Encuesta guardada exitosamente en MongoDB',
+      responseId: result.insertedId
+    });
   } catch (error) {
     console.error('❌ Error al procesar la encuesta:', error);
     res.status(500).json({
@@ -79,66 +88,46 @@ app.post('/api/survey', async (req, res) => {
 app.get('/api/survey/stats', async (req, res) => {
   try {
     // Obtener total de respuestas
-    const { count: totalCount, error: countError } = await supabase
-      .from('encuestas')
-      .select('*', { count: 'exact', head: true });
-
-    if (countError) {
-      throw countError;
-    }
+    const totalCount = await db.collection(collectionName).countDocuments();
 
     // Obtener respuestas de hoy
-    const today = new Date().toISOString().split('T')[0];
-    const { count: todayCount, error: todayError } = await supabase
-      .from('encuestas')
-      .select('*', { count: 'exact', head: true })
-      .gte('created_at', today);
-
-    if (todayError) {
-      throw todayError;
-    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayCount = await db.collection(collectionName).countDocuments({
+      timestamp: { $gte: today }
+    });
 
     // Obtener estadísticas por tipo de vivienda
-    const { data: viviendaStats, error: viviendaError } = await supabase
-      .from('encuestas')
-      .select('tipo_vivienda');
-
-    if (viviendaError) {
-      throw viviendaError;
-    }
+    const viviendaStats = await db.collection(collectionName).aggregate([
+      { $group: { _id: '$tipo_vivienda', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray();
 
     const viviendaCount = {};
     viviendaStats.forEach(item => {
-      viviendaCount[item.tipo_vivienda] = (viviendaCount[item.tipo_vivienda] || 0) + 1;
+      viviendaCount[item._id] = item.count;
     });
 
-    const tipoViviendaMasPopular = Object.keys(viviendaCount).reduce((a, b) => 
-      viviendaCount[a] > viviendaCount[b] ? a : b, 'N/A'
-    );
+    const tipoViviendaMasPopular = viviendaStats.length > 0 ? viviendaStats[0]._id : 'N/A';
 
     // Obtener estadísticas por estilo
-    const { data: estiloStats, error: estiloError } = await supabase
-      .from('encuestas')
-      .select('estilo');
-
-    if (estiloError) {
-      throw estiloError;
-    }
+    const estiloStats = await db.collection(collectionName).aggregate([
+      { $group: { _id: '$estilo', count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]).toArray();
 
     const estiloCount = {};
     estiloStats.forEach(item => {
-      estiloCount[item.estilo] = (estiloCount[item.estilo] || 0) + 1;
+      estiloCount[item._id] = item.count;
     });
 
-    const estiloMasPopular = Object.keys(estiloCount).reduce((a, b) => 
-      estiloCount[a] > estiloCount[b] ? a : b, 'N/A'
-    );
+    const estiloMasPopular = estiloStats.length > 0 ? estiloStats[0]._id : 'N/A';
 
     res.json({
       success: true,
       stats: {
-        totalRespuestas: totalCount || 0,
-        respuestasHoy: todayCount || 0,
+        totalRespuestas: totalCount,
+        respuestasHoy: todayCount,
         tipoViviendaMasPopular,
         estiloMasPopular,
         distribucionVivienda: viviendaCount,
@@ -157,24 +146,15 @@ app.get('/api/survey/stats', async (req, res) => {
 
 app.get('/api/survey/all', async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('encuestas')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const responses = await db.collection(collectionName)
+      .find({})
+      .sort({ timestamp: -1 })
+      .toArray();
 
-    if (error) {
-      console.error('❌ Error al obtener encuestas:', error);
-      res.status(500).json({
-        success: false,
-        message: 'Error al obtener las respuestas',
-        error: error.message
-      });
-    } else {
-      res.json({
-        success: true,
-        responses: data || []
-      });
-    }
+    res.json({
+      success: true,
+      responses: responses
+    });
   } catch (error) {
     console.error('❌ Error al obtener encuestas:', error);
     res.status(500).json({
@@ -194,5 +174,14 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
   console.log(`🌐 Aplicación disponible en http://localhost:${PORT}`);
-  console.log(`💾 Base de datos Supabase: ${supabaseUrl}`);
+  console.log(`💾 Base de datos MongoDB Atlas: ${dbName}`);
+});
+
+// Manejar cierre graceful
+process.on('SIGINT', async () => {
+  if (mongoClient) {
+    await mongoClient.close();
+    console.log('🔌 Conexión a MongoDB cerrada');
+  }
+  process.exit(0);
 }); 
