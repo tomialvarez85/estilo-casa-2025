@@ -8,12 +8,25 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Crear cliente de Supabase
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_ANON_KEY;
+// Configurar Supabase con nombres de variables diferentes
+const supabaseUrl = process.env.DATABASE_URL;
+const supabaseKey = process.env.DATABASE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.error('❌ Error: DATABASE_URL y DATABASE_KEY deben estar configurados en las variables de entorno');
+  process.exit(1);
+}
+
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-console.log('✅ Conectado a Supabase:', supabaseUrl);
+// Verificar conexión a Supabase
+supabase.from('encuestas').select('count').limit(1)
+  .then(() => {
+    console.log('✅ Conectado a Supabase:', supabaseUrl);
+  })
+  .catch((error) => {
+    console.error('❌ Error conectando a Supabase:', error.message);
+  });
 
 // Middleware
 app.use(cors());
@@ -39,7 +52,7 @@ app.post('/api/survey', async (req, res) => {
       .select();
 
     if (error) {
-      console.error('Error al guardar en Supabase:', error);
+      console.error('❌ Error al guardar encuesta:', error);
       res.status(500).json({
         success: false,
         message: 'Error al guardar la encuesta en Supabase',
@@ -54,7 +67,7 @@ app.post('/api/survey', async (req, res) => {
       });
     }
   } catch (error) {
-    console.error('Error general:', error);
+    console.error('❌ Error al procesar la encuesta:', error);
     res.status(500).json({
       success: false,
       message: 'Error al procesar la encuesta',
@@ -66,7 +79,7 @@ app.post('/api/survey', async (req, res) => {
 app.get('/api/survey/stats', async (req, res) => {
   try {
     // Obtener total de respuestas
-    const { count: totalResponses, error: countError } = await supabase
+    const { count: totalCount, error: countError } = await supabase
       .from('encuestas')
       .select('*', { count: 'exact', head: true });
 
@@ -76,7 +89,7 @@ app.get('/api/survey/stats', async (req, res) => {
 
     // Obtener respuestas de hoy
     const today = new Date().toISOString().split('T')[0];
-    const { count: todayResponses, error: todayError } = await supabase
+    const { count: todayCount, error: todayError } = await supabase
       .from('encuestas')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', today);
@@ -85,55 +98,55 @@ app.get('/api/survey/stats', async (req, res) => {
       throw todayError;
     }
 
-    // Obtener tipo de vivienda más popular
-    const { data: popularAreas, error: areasError } = await supabase
+    // Obtener estadísticas por tipo de vivienda
+    const { data: viviendaStats, error: viviendaError } = await supabase
       .from('encuestas')
-      .select('tipo_vivienda')
-      .limit(100);
+      .select('tipo_vivienda');
 
-    if (areasError) {
-      throw areasError;
+    if (viviendaError) {
+      throw viviendaError;
     }
 
-    // Obtener estilo más popular
-    const { data: popularStyles, error: stylesError } = await supabase
-      .from('encuestas')
-      .select('estilo')
-      .limit(100);
+    const viviendaCount = {};
+    viviendaStats.forEach(item => {
+      viviendaCount[item.tipo_vivienda] = (viviendaCount[item.tipo_vivienda] || 0) + 1;
+    });
 
-    if (stylesError) {
-      throw stylesError;
+    const tipoViviendaMasPopular = Object.keys(viviendaCount).reduce((a, b) => 
+      viviendaCount[a] > viviendaCount[b] ? a : b, 'N/A'
+    );
+
+    // Obtener estadísticas por estilo
+    const { data: estiloStats, error: estiloError } = await supabase
+      .from('encuestas')
+      .select('estilo');
+
+    if (estiloError) {
+      throw estiloError;
     }
 
-    // Procesar estadísticas
-    const areaCounts = {};
-    const styleCounts = {};
-
-    popularAreas.forEach(item => {
-      areaCounts[item.tipo_vivienda] = (areaCounts[item.tipo_vivienda] || 0) + 1;
+    const estiloCount = {};
+    estiloStats.forEach(item => {
+      estiloCount[item.estilo] = (estiloCount[item.estilo] || 0) + 1;
     });
 
-    popularStyles.forEach(item => {
-      styleCounts[item.estilo] = (styleCounts[item.estilo] || 0) + 1;
-    });
-
-    const topArea = Object.entries(areaCounts)
-      .sort(([,a], [,b]) => b - a)[0] || ['ninguno', 0];
-
-    const topStyle = Object.entries(styleCounts)
-      .sort(([,a], [,b]) => b - a)[0] || ['ninguno', 0];
+    const estiloMasPopular = Object.keys(estiloCount).reduce((a, b) => 
+      estiloCount[a] > estiloCount[b] ? a : b, 'N/A'
+    );
 
     res.json({
       success: true,
       stats: {
-        totalResponses: totalResponses || 0,
-        todayResponses: todayResponses || 0,
-        popularAreas: [{ area: topArea[0], count: topArea[1] }],
-        popularStyles: [{ estilo: topStyle[0], count: topStyle[1] }]
+        totalRespuestas: totalCount || 0,
+        respuestasHoy: todayCount || 0,
+        tipoViviendaMasPopular,
+        estiloMasPopular,
+        distribucionVivienda: viviendaCount,
+        distribucionEstilo: estiloCount
       }
     });
   } catch (error) {
-    console.error('Error al obtener estadísticas:', error);
+    console.error('❌ Error al obtener estadísticas:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener estadísticas',
@@ -150,7 +163,7 @@ app.get('/api/survey/all', async (req, res) => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('Error al obtener encuestas:', error);
+      console.error('❌ Error al obtener encuestas:', error);
       res.status(500).json({
         success: false,
         message: 'Error al obtener las respuestas',
@@ -159,11 +172,11 @@ app.get('/api/survey/all', async (req, res) => {
     } else {
       res.json({
         success: true,
-        responses: data
+        responses: data || []
       });
     }
   } catch (error) {
-    console.error('Error general:', error);
+    console.error('❌ Error al obtener encuestas:', error);
     res.status(500).json({
       success: false,
       message: 'Error al obtener las respuestas',
@@ -181,5 +194,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
   console.log(`📊 API disponible en http://localhost:${PORT}/api`);
   console.log(`🌐 Aplicación disponible en http://localhost:${PORT}`);
-  console.log(`☁️ Base de datos Supabase: ${supabaseUrl}`);
+  console.log(`💾 Base de datos Supabase: ${supabaseUrl}`);
 }); 
