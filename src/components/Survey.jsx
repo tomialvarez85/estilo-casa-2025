@@ -102,7 +102,12 @@ const Survey = ({ onComplete, onBack }) => {
   const progress = (answeredCount / totalQuestions) * 100;
 
   return (
-    <div className="card compact-survey">
+    <div className="card compact-survey" style={{
+      minHeight: '100vh',
+      display: 'flex',
+      flexDirection: 'column',
+      paddingBottom: '100px' // Espacio extra para el botón
+    }}>
       <div className="progress-bar">
         <div 
           className="progress-fill" 
@@ -117,7 +122,11 @@ const Survey = ({ onComplete, onBack }) => {
         </div>
       </div>
 
-      <div className="compact-questions-grid">
+      <div className="compact-questions-grid" style={{
+        flex: 1,
+        overflowY: 'auto',
+        paddingBottom: '20px'
+      }}>
         {questions.map((question, index) => (
           <div key={question.id} className="compact-question-section">
             <div className="compact-question-header">
@@ -141,17 +150,24 @@ const Survey = ({ onComplete, onBack }) => {
         ))}
       </div>
       
-      <div className="survey-footer">
+      <div className="survey-footer" style={{
+        position: 'sticky',
+        bottom: 0,
+        backgroundColor: 'white',
+        padding: '10px 0',
+        borderTop: '2px solid #e9ecef',
+        zIndex: 100
+      }}>
         <div style={{
           display: 'flex',
           gap: 'clamp(10px, 3vw, 20px)',
           justifyContent: 'center',
           flexWrap: 'wrap',
-          padding: '20px',
-          marginTop: '20px',
+          padding: '15px',
           backgroundColor: '#f8f9fa',
           borderRadius: '15px',
-          border: '2px solid #e9ecef'
+          border: '2px solid #e9ecef',
+          margin: '0 10px'
         }}>
           <button 
             className="btn" 
