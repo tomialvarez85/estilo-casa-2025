@@ -54,43 +54,123 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   // Función para iniciar reconocimiento de voz
   const startVoiceRecognition = () => {
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      
-      recognition.lang = 'es-ES';
+    // Verificar si el navegador soporta reconocimiento de voz
+    if (!('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
+      alert('Tu navegador no soporta reconocimiento de voz. Por favor, usa la encuesta.');
+      return;
+    }
+
+    // Verificar si estamos en HTTPS o localhost (requerido para móviles)
+    if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      alert('El reconocimiento de voz requiere HTTPS o localhost para funcionar en móviles. Por favor, usa la encuesta.');
+      return;
+    }
+
+    // Solicitar permisos de micrófono explícitamente
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      navigator.mediaDevices.getUserMedia({ audio: true })
+        .then(() => {
+          // Permisos concedidos, iniciar reconocimiento
+          initializeSpeechRecognition();
+        })
+        .catch((error) => {
+          console.log('❌ Error al solicitar permisos de micrófono:', error);
+          if (error.name === 'NotAllowedError') {
+            alert('Se requieren permisos de micrófono para usar esta función. Por favor, permite el acceso al micrófono y recarga la página.');
+          } else if (error.name === 'NotFoundError') {
+            alert('No se encontró ningún micrófono. Por favor, conecta un micrófono y vuelve a intentar.');
+          } else {
+            alert('Error al acceder al micrófono: ' + error.message + '. Por favor, usa la encuesta.');
+          }
+        });
+    } else {
+      // Fallback para navegadores que no soportan getUserMedia
+      initializeSpeechRecognition();
+    }
+  };
+
+  // Función para inicializar el reconocimiento de voz
+  const initializeSpeechRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    
+    // Configuración optimizada para móviles
+    recognition.lang = 'es-ES';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+    
+    // Configuraciones específicas para móviles
+    if (window.innerWidth <= 768) {
       recognition.continuous = false;
       recognition.interimResults = false;
+    }
+    
+    recognition.onstart = () => {
+      setIsListening(true);
+      setTranscript('');
+      console.log('🎤 Reconocimiento de voz iniciado');
       
-      recognition.onstart = () => {
-        setIsListening(true);
-        setTranscript('');
-        console.log('🎤 Reconocimiento de voz iniciado');
-      };
+      // Mostrar indicador visual para móviles
+      if (window.innerWidth <= 768) {
+        // Agregar clase CSS para indicador móvil
+        document.body.style.backgroundColor = '#e8f5e8';
+      }
+    };
+    
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setTranscript(transcript);
+      console.log('🎤 Texto reconocido:', transcript);
       
-      recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
-        setTranscript(transcript);
-        console.log('🎤 Texto reconocido:', transcript);
-        
-        // Analizar el texto y generar recomendaciones
-        analyzeVoiceInput(transcript);
-      };
+      // Analizar el texto y generar recomendaciones
+      analyzeVoiceInput(transcript);
+    };
+    
+    recognition.onerror = (event) => {
+      console.log('❌ Error en reconocimiento de voz:', event.error);
+      setIsListening(false);
       
-      recognition.onerror = (event) => {
-        console.log('❌ Error en reconocimiento de voz:', event.error);
-        setIsListening(false);
-        alert('Error en el reconocimiento de voz. Por favor, intenta de nuevo.');
-      };
+      // Restaurar color de fondo
+      document.body.style.backgroundColor = '';
       
-      recognition.onend = () => {
-        setIsListening(false);
-        console.log('🎤 Reconocimiento de voz finalizado');
-      };
+      let errorMessage = 'Error en el reconocimiento de voz. Por favor, intenta de nuevo.';
       
+      switch (event.error) {
+        case 'not-allowed':
+          errorMessage = 'Permisos de micrófono denegados. Por favor, permite el acceso al micrófono en la configuración del navegador.';
+          break;
+        case 'no-speech':
+          errorMessage = 'No se detectó voz. Por favor, habla más cerca del micrófono.';
+          break;
+        case 'audio-capture':
+          errorMessage = 'No se pudo acceder al micrófono. Verifica que el micrófono esté conectado y funcionando.';
+          break;
+        case 'network':
+          errorMessage = 'Error de red. Verifica tu conexión a internet.';
+          break;
+        case 'service-not-allowed':
+          errorMessage = 'El servicio de reconocimiento de voz no está disponible.';
+          break;
+      }
+      
+      alert(errorMessage);
+    };
+    
+    recognition.onend = () => {
+      setIsListening(false);
+      console.log('🎤 Reconocimiento de voz finalizado');
+      
+      // Restaurar color de fondo
+      document.body.style.backgroundColor = '';
+    };
+    
+    // Intentar iniciar el reconocimiento
+    try {
       recognition.start();
-    } else {
-      alert('Tu navegador no soporta reconocimiento de voz. Por favor, usa la encuesta.');
+    } catch (error) {
+      console.log('❌ Error al iniciar reconocimiento:', error);
+      alert('Error al iniciar el reconocimiento de voz. Por favor, usa la encuesta.');
     }
   };
 
@@ -329,6 +409,10 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   // Mostrar interfaz de entrada por voz
   if (showVoiceInput) {
+    // Verificar compatibilidad móvil
+    const isMobile = window.innerWidth <= 768;
+    const isSecureContext = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    
     return (
       <div className="card">
         <div className="voice-input-container" style={{
@@ -346,14 +430,14 @@ const Results = ({ results, surveyData, onRestart }) => {
           <div className="voice-input-card" style={{
             backgroundColor: 'white',
             borderRadius: '20px',
-            padding: '40px',
+            padding: isMobile ? '30px 20px' : '40px',
             boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
             textAlign: 'center',
             maxWidth: '600px',
             width: '100%'
           }}>
             <div className="voice-icon" style={{
-              fontSize: 'clamp(4rem, 10vw, 6rem)',
+              fontSize: isMobile ? 'clamp(3rem, 8vw, 4rem)' : 'clamp(4rem, 10vw, 6rem)',
               marginBottom: '20px',
               animation: isListening ? 'pulse 1.5s infinite' : 'none'
             }}>
@@ -361,15 +445,35 @@ const Results = ({ results, surveyData, onRestart }) => {
             </div>
             
             <h1 style={{
-              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              fontSize: isMobile ? 'clamp(1.2rem, 3vw, 1.8rem)' : 'clamp(1.5rem, 4vw, 2.5rem)',
               color: '#333',
               marginBottom: '20px'
             }}>
               {isListening ? 'Te estoy escuchando...' : 'Dime qué buscas'}
             </h1>
             
+            {/* Advertencia para móviles */}
+            {isMobile && !isSecureContext && (
+              <div style={{
+                backgroundColor: '#fff3cd',
+                border: '1px solid #ffeaa7',
+                borderRadius: '10px',
+                padding: '15px',
+                marginBottom: '20px'
+              }}>
+                <p style={{
+                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+                  color: '#856404',
+                  margin: '0',
+                  fontWeight: 'bold'
+                }}>
+                  ⚠️ Para usar el micrófono en móviles, la aplicación debe estar en HTTPS o localhost
+                </p>
+              </div>
+            )}
+            
             <p style={{
-              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+              fontSize: isMobile ? 'clamp(0.9rem, 2.5vw, 1.1rem)' : 'clamp(1rem, 2.5vw, 1.2rem)',
               color: '#666',
               marginBottom: '30px',
               lineHeight: '1.5'
@@ -401,39 +505,40 @@ const Results = ({ results, surveyData, onRestart }) => {
             
             <div className="voice-controls" style={{
               display: 'flex',
-              gap: '15px',
+              gap: isMobile ? '10px' : '15px',
               justifyContent: 'center',
               flexWrap: 'wrap'
             }}>
               <button 
                 onClick={startVoiceRecognition}
-                disabled={isListening}
+                disabled={isListening || (isMobile && !isSecureContext)}
                 style={{
-                  backgroundColor: isListening ? '#ccc' : '#4CAF50',
+                  backgroundColor: isListening || (isMobile && !isSecureContext) ? '#ccc' : '#4CAF50',
                   color: 'white',
                   border: 'none',
-                  padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                  padding: isMobile ? 'clamp(12px, 3vw, 16px) clamp(20px, 4vw, 30px)' : 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
                   borderRadius: '50px',
-                  fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                  fontSize: isMobile ? 'clamp(0.9rem, 2.5vw, 1.1rem)' : 'clamp(1rem, 2.5vw, 1.2rem)',
                   fontWeight: 'bold',
-                  cursor: isListening ? 'not-allowed' : 'pointer',
+                  cursor: isListening || (isMobile && !isSecureContext) ? 'not-allowed' : 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)'
+                  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)',
+                  minWidth: isMobile ? '120px' : '150px'
                 }}
                 onMouseOver={(e) => {
-                  if (!isListening) {
+                  if (!isListening && !(isMobile && !isSecureContext)) {
                     e.target.style.transform = 'translateY(-2px)';
                     e.target.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
                   }
                 }}
                 onMouseOut={(e) => {
-                  if (!isListening) {
+                  if (!isListening && !(isMobile && !isSecureContext)) {
                     e.target.style.transform = 'translateY(0)';
                     e.target.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
                   }
                 }}
               >
-                {isListening ? '🎤 Escuchando...' : '🎤 Hablar'}
+                {isListening ? '🎤 Escuchando...' : (isMobile && !isSecureContext) ? '🔒 No disponible' : '🎤 Hablar'}
               </button>
               
               <button 
@@ -442,13 +547,14 @@ const Results = ({ results, surveyData, onRestart }) => {
                   backgroundColor: '#ff9800',
                   color: 'white',
                   border: 'none',
-                  padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                  padding: isMobile ? 'clamp(12px, 3vw, 16px) clamp(20px, 4vw, 30px)' : 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
                   borderRadius: '50px',
-                  fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                  fontSize: isMobile ? 'clamp(0.9rem, 2.5vw, 1.1rem)' : 'clamp(1rem, 2.5vw, 1.2rem)',
                   fontWeight: 'bold',
                   cursor: 'pointer',
                   transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)'
+                  boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)',
+                  minWidth: isMobile ? '120px' : '150px'
                 }}
                 onMouseOver={(e) => {
                   e.target.style.transform = 'translateY(-2px)';
@@ -465,12 +571,12 @@ const Results = ({ results, surveyData, onRestart }) => {
             
             <div style={{
               marginTop: '30px',
-              padding: '20px',
+              padding: isMobile ? '15px' : '20px',
               backgroundColor: '#f8f9fa',
               borderRadius: '15px'
             }}>
               <h3 style={{
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                fontSize: isMobile ? 'clamp(0.9rem, 2.5vw, 1.1rem)' : 'clamp(1rem, 2.5vw, 1.2rem)',
                 color: '#333',
                 marginBottom: '15px'
               }}>
@@ -478,7 +584,7 @@ const Results = ({ results, surveyData, onRestart }) => {
               </h3>
               <ul style={{
                 textAlign: 'left',
-                fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+                fontSize: isMobile ? 'clamp(0.7rem, 2.5vw, 0.9rem)' : 'clamp(0.8rem, 2.5vw, 1rem)',
                 color: '#666',
                 lineHeight: '1.6'
               }}>
