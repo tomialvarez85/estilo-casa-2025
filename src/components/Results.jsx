@@ -623,24 +623,50 @@ const Results = ({ results, surveyData, onRestart }) => {
             }}>
               💡 Explora todos los sectores para encontrar inspiración y productos únicos
             </p>
-            <button 
-              onClick={backToRecommendations}
-              style={{
-                backgroundColor: '#2196F3',
-                color: 'white',
-                border: 'none',
-                padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 25px)',
-                borderRadius: '25px',
-                fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s ease',
-                whiteSpace: 'nowrap'
-              }}
-              onMouseOver={(e) => e.target.style.backgroundColor = '#1976D2'}
-              onMouseOut={(e) => e.target.style.backgroundColor = '#2196F3'}
-            >
-              ← Volver a Recomendaciones
-            </button>
+            <div style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button 
+                onClick={backToRecommendations}
+                style={{
+                  backgroundColor: '#2196F3',
+                  color: 'white',
+                  border: 'none',
+                  padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 25px)',
+                  borderRadius: '25px',
+                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#1976D2'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#2196F3'}
+              >
+                ← Volver a Recomendaciones
+              </button>
+              
+              <button 
+                onClick={onRestart}
+                style={{
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  border: 'none',
+                  padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 25px)',
+                  borderRadius: '25px',
+                  fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                  whiteSpace: 'nowrap'
+                }}
+                onMouseOver={(e) => e.target.style.backgroundColor = '#f57c00'}
+                onMouseOut={(e) => e.target.style.backgroundColor = '#ff9800'}
+              >
+                🏠 Volver al Inicio
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -816,73 +842,6 @@ const Results = ({ results, surveyData, onRestart }) => {
           }}>
             🎉 ¡Disfruta explorando estas áreas y encuentra los productos perfectos para tu hogar!
           </p>
-        </div>
-
-        <div className="restart-section" style={{
-          textAlign: 'center',
-          margin: '30px 0'
-        }}>
-          <button 
-            className="btn restart-btn"
-            onClick={showTePodriaInteresarSection}
-            style={{
-              backgroundColor: '#2196F3',
-              color: 'white',
-              margin: '10px',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#1976D2';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(33, 150, 243, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#2196F3';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.3)';
-            }}
-          >
-            🔍 Te podría interesar
-          </button>
-          
-          <button 
-            className="btn voice-input-btn"
-            onClick={showVoiceInputOption}
-            style={{
-              backgroundColor: '#9C27B0',
-              color: 'white',
-              margin: '10px',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#7B1FA2';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(156, 39, 176, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#9C27B0';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(156, 39, 176, 0.3)';
-            }}
-          >
-            🎤 Probar con Voz
-          </button>
         </div>
       </div>
     </div>
