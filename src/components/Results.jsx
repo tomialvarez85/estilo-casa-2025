@@ -810,68 +810,9 @@ const Results = ({ results, surveyData, onRestart }) => {
             🔍 Te podría interesar
           </button>
         </div>
-
-        <div className="survey-summary" style={{
-          backgroundColor: 'white',
-          borderRadius: '15px',
-          padding: '20px',
-          margin: '20px 0',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          <h3 style={{
-            fontSize: 'clamp(1rem, 3vw, 1.2rem)',
-            marginBottom: '15px',
-            textAlign: 'center'
-          }}>📋 Resumen de tus Respuestas:</h3>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-            gap: '10px'
-          }}>
-            <p style={{
-              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-              margin: '5px 0'
-            }}><strong>Tipo de vivienda:</strong> {surveyData.tipoVivienda}</p>
-            <p style={{
-              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-              margin: '5px 0'
-            }}><strong>Estilo preferido:</strong> {surveyData.estilo}</p>
-            <p style={{
-              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-              margin: '5px 0'
-            }}><strong>Presupuesto:</strong> {surveyData.presupuesto}</p>
-            <p style={{
-              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-              margin: '5px 0'
-            }}><strong>Prioridad:</strong> {surveyData.prioridad}</p>
-          </div>
-        </div>
-
-        <div className="result-footer" style={{
-          backgroundColor: 'white',
-          borderRadius: '15px',
-          padding: '20px',
-          margin: '20px 0',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-        }}>
-          <p className="result-note" style={{
-            fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-            lineHeight: '1.4',
-            margin: '10px 0'
-          }}>
-            💡 Estas recomendaciones están basadas en un algoritmo inteligente que analiza tus preferencias y necesidades específicas.
-          </p>
-          <p className="result-note" style={{
-            fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-            lineHeight: '1.4',
-            margin: '10px 0'
-          }}>
-            🎉 ¡Disfruta explorando estas áreas y encuentra los productos perfectos para tu hogar!
-          </p>
-        </div>
       </div>
     </div>
   );
 };
 
-export default Results; 
+export default Results;
