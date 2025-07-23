@@ -144,12 +144,14 @@ const Results = ({ results, surveyData, onRestart }) => {
     results.topAreas = topAreas;
     surveyData = simulatedSurveyData;
     
-    // Mostrar los resultados
-    setShowVoiceInput(false);
-    
     // Reproducir confirmación de voz
     const confirmationText = `Perfecto, he entendido que buscas ${text}. Te voy a mostrar las mejores recomendaciones para ti.`;
     speakWithTTS(confirmationText);
+    
+    // Esperar 2 segundos antes de mostrar los resultados
+    setTimeout(() => {
+      setShowVoiceInput(false);
+    }, 2000);
   };
 
   // Función para mostrar la opción de entrada por voz
@@ -782,6 +784,42 @@ const Results = ({ results, surveyData, onRestart }) => {
             }}
           >
             {isSpeaking ? '🔇 Detener Audio' : '🔊 Escuchar Recomendaciones'}
+          </button>
+        </div>
+
+        <div className="restart-section" style={{
+          textAlign: 'center',
+          margin: '30px 0'
+        }}>
+          <button 
+            className="btn restart-btn"
+            onClick={showTePodriaInteresarSection}
+            style={{
+              backgroundColor: '#2196F3',
+              color: 'white',
+              margin: '10px',
+              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
+              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
+              fontWeight: 'bold',
+              borderRadius: '25px',
+              border: 'none',
+              cursor: 'pointer',
+              boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)',
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#1976D2';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 12px rgba(33, 150, 243, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#2196F3';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.3)';
+            }}
+          >
+            🔍 Te podría interesar
           </button>
         </div>
 
