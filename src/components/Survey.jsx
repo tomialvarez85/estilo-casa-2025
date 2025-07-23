@@ -82,9 +82,18 @@ const Survey = ({ onComplete, onBack }) => {
     // Verificar que todas las preguntas estén respondidas
     const allAnswered = questions.every(q => answers[q.id]);
     
+    console.log('🎯 handleSubmit llamado');
+    console.log('📊 answeredCount:', answeredCount);
+    console.log('📋 totalQuestions:', totalQuestions);
+    console.log('✅ allAnswered:', allAnswered);
+    console.log('📝 answers:', answers);
+    
     if (allAnswered) {
+      console.log('🚀 Encuesta completa, generando resultados...');
       const results = calculateRecommendations(answers);
       onComplete(answers, results);
+    } else {
+      console.log('❌ Encuesta incompleta, faltan respuestas');
     }
   };
 
@@ -135,9 +144,14 @@ const Survey = ({ onComplete, onBack }) => {
       <div className="survey-footer">
         <div style={{
           display: 'flex',
-          gap: '15px',
+          gap: 'clamp(10px, 3vw, 20px)',
           justifyContent: 'center',
-          flexWrap: 'wrap'
+          flexWrap: 'wrap',
+          padding: '20px',
+          marginTop: '20px',
+          backgroundColor: '#f8f9fa',
+          borderRadius: '15px',
+          border: '2px solid #e9ecef'
         }}>
           <button 
             className="btn btn-secondary" 
@@ -172,20 +186,28 @@ const Survey = ({ onComplete, onBack }) => {
           <button 
             className="btn" 
             onClick={handleSubmit}
-            disabled={answeredCount < totalQuestions}
             style={{
               backgroundColor: answeredCount < totalQuestions ? '#ccc' : '#4CAF50',
               color: 'white',
               border: 'none',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
+              padding: 'clamp(15px, 4vw, 20px) clamp(30px, 6vw, 40px)',
+              fontSize: 'clamp(1rem, 3vw, 1.2rem)',
               fontWeight: 'bold',
               borderRadius: '25px',
               cursor: answeredCount < totalQuestions ? 'not-allowed' : 'pointer',
               boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
               transition: 'all 0.3s ease',
               whiteSpace: 'nowrap',
-              opacity: answeredCount < totalQuestions ? 0.6 : 1
+              opacity: 1, // Siempre visible
+              minHeight: '50px',
+              minWidth: '200px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              lineHeight: '1.2',
+              zIndex: 10,
+              position: 'relative'
             }}
             onMouseOver={(e) => {
               if (answeredCount >= totalQuestions) {
@@ -202,7 +224,7 @@ const Survey = ({ onComplete, onBack }) => {
           >
             {answeredCount < totalQuestions 
               ? `Completar encuesta (${answeredCount}/${totalQuestions})`
-              : 'Ver Mis Recomendaciones'
+              : '🚀 Ver Mis Recomendaciones'
             }
           </button>
         </div>
