@@ -22,15 +22,15 @@ function App() {
     setShowVoiceOption(false);
   };
 
-  const handleVoiceRecognition = (voiceResults) => {
-    setSurveyData({
-      tipoVivienda: 'Detectado por voz',
-      estilo: 'Basado en tu consulta',
-      presupuesto: 'Variado',
-      prioridad: 'Personalizada'
-    });
+  const handleVoiceRecognition = (voiceResults, voiceSurveyData) => {
+    console.log('🎯 handleVoiceRecognition llamado con:', { voiceResults, voiceSurveyData });
+    
+    // Actualizar estados de forma síncrona
+    setSurveyData(voiceSurveyData);
     setResults(voiceResults);
     setCurrentStep('results');
+    
+    console.log('🎯 Estados actualizados - currentStep: results');
   };
 
   const showVoiceInput = () => {
@@ -43,6 +43,7 @@ function App() {
 
   // Mostrar opción de entrada por voz
   if (showVoiceOption) {
+    console.log('🎯 Renderizando VoiceRecognition con onComplete:', typeof handleVoiceRecognition);
     return <VoiceRecognition onComplete={handleVoiceRecognition} onBack={backToWelcome} />;
   }
 

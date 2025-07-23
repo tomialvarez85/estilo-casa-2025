@@ -51,73 +51,27 @@ const Survey = ({ onComplete, onBack }) => {
   };
 
   const calculateRecommendations = (data) => {
+    console.log('🎯 Calculando recomendaciones para encuesta:', data);
+    
+    // Siempre mostrar los 3 pabellones principales independientemente de las respuestas
+    const topAreas = [
+      { area: 'cocina', score: 3 },
+      { area: 'living', score: 2 },
+      { area: 'dormitorio', score: 1 }
+    ];
+    
+    // Crear puntuaciones para todas las áreas (para compatibilidad)
     const scores = {
-      cocina: 0,
-      living: 0,
-      dormitorio: 0,
+      cocina: 3,
+      living: 2,
+      dormitorio: 1,
       bano: 0,
       oficina: 0,
       exterior: 0
     };
-
-    // Algoritmo de puntuación basado en las respuestas
-    if (data.tipoVivienda === 'casa') {
-      scores.living += 3;
-      scores.exterior += 2;
-    } else if (data.tipoVivienda === 'apartamento') {
-      scores.living += 2;
-      scores.oficina += 1;
-    } else if (data.tipoVivienda === 'duplex') {
-      scores.living += 2;
-      scores.cocina += 1;
-    }
-
-    if (data.estilo === 'moderno') {
-      scores.cocina += 3;
-      scores.living += 2;
-      scores.bano += 2;
-    } else if (data.estilo === 'clasico') {
-      scores.living += 3;
-      scores.dormitorio += 2;
-    } else if (data.estilo === 'minimalista') {
-      scores.oficina += 3;
-      scores.cocina += 2;
-    } else if (data.estilo === 'rustico') {
-      scores.exterior += 2;
-      scores.living += 1;
-    }
-
-    if (data.presupuesto === 'alto') {
-      scores.cocina += 2;
-      scores.bano += 2;
-      scores.living += 2;
-    } else if (data.presupuesto === 'medio') {
-      scores.living += 2;
-      scores.dormitorio += 2;
-    } else if (data.presupuesto === 'bajo') {
-      scores.oficina += 2;
-      scores.exterior += 1;
-    }
-
-    if (data.prioridad === 'funcionalidad') {
-      scores.cocina += 3;
-      scores.bano += 2;
-    } else if (data.prioridad === 'estetica') {
-      scores.living += 3;
-      scores.dormitorio += 2;
-    } else if (data.prioridad === 'espacio') {
-      scores.oficina += 3;
-      scores.exterior += 2;
-    }
-
-    // Ordenar áreas por puntuación
-    const sortedAreas = Object.entries(scores)
-      .sort(([,a], [,b]) => b - a)
-      .map(([area, score]) => ({ area, score }));
-
-    // Obtener las 3 áreas principales
-    const topAreas = sortedAreas.slice(0, 3);
-
+    
+    console.log('🎯 Resultados de encuesta:', { topAreas, allScores: scores });
+    
     return {
       topAreas,
       allScores: scores

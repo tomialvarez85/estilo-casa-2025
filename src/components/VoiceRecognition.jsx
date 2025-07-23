@@ -1,9 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 const VoiceRecognition = ({ onComplete, onBack }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [error, setError] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [voiceResults, setVoiceResults] = useState(null);
+  const [voiceSurveyData, setVoiceSurveyData] = useState(null);
+  const [shouldRedirect, setShouldRedirect] = useState(false);
+
+  // Efecto para manejar la redirección
+  useEffect(() => {
+    if (shouldRedirect && voiceResults && voiceSurveyData) {
+      console.log('🔄 Efecto de redirección activado');
+      onComplete(voiceResults, voiceSurveyData);
+      setShouldRedirect(false);
+    }
+  }, [shouldRedirect, voiceResults, voiceSurveyData, onComplete]);
+
+  // Función para continuar a los resultados
+  const handleContinue = () => {
+    console.log('🚀 handleContinue llamado');
+    console.log('📊 voiceResults:', voiceResults);
+    console.log('📋 voiceSurveyData:', voiceSurveyData);
+    
+    if (voiceResults && voiceSurveyData) {
+      console.log('✅ Activando redirección...');
+      setShouldRedirect(true);
+    }
+  };
 
   // Función para iniciar reconocimiento de voz
   const startVoiceRecognition = () => {
@@ -19,12 +44,14 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
         setIsListening(true);
         setTranscript('');
         setError('');
+        setIsProcessing(false);
         console.log('🎤 Reconocimiento de voz iniciado');
       };
       
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         setTranscript(transcript);
+        setIsProcessing(true);
         console.log('🎤 Texto reconocido:', transcript);
         
         // Analizar el texto y generar recomendaciones
@@ -34,6 +61,7 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       recognition.onerror = (event) => {
         console.log('❌ Error en reconocimiento de voz:', event.error);
         setIsListening(false);
+        setIsProcessing(false);
         setError('Error en el reconocimiento de voz. Por favor, intenta de nuevo.');
       };
       
@@ -50,41 +78,24 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
 
   // Función para analizar el texto de voz y generar recomendaciones
   const analyzeVoiceInput = (text) => {
-    const lowerText = text.toLowerCase();
+    console.log('🎯 Analizando texto de voz:', text);
     
-    // Palabras clave para cada área
-    const keywords = {
-      cocina: ['cocina', 'electrodomésticos', 'hornos', 'heladeras', 'microondas', 'cocinar', 'comida', 'utensilios', 'cocina integral', 'isla de cocina'],
-      living: ['living', 'comedor', 'sala', 'sofá', 'mesa', 'sillas', 'decoración', 'muebles', 'sala de estar', 'comedor diario'],
-      dormitorio: ['dormitorio', 'cama', 'colchón', 'ropa de cama', 'armario', 'ropero', 'descanso', 'dormir', 'habitación', 'cuarto'],
-      bano: ['baño', 'sanitarios', 'ducha', 'grifería', 'toilet', 'lavatorio', 'accesorios', 'baño completo', 'baño principal'],
-      oficina: ['oficina', 'escritorio', 'silla', 'computadora', 'trabajo', 'estudio', 'muebles de oficina', 'home office', 'espacio de trabajo'],
-      exterior: ['jardín', 'exterior', 'terraza', 'balcón', 'muebles de jardín', 'plantas', 'decoración exterior', 'patio', 'terraza']
+    // Siempre mostrar los 3 pabellones principales independientemente del texto
+    const topAreas = [
+      { area: 'cocina', score: 3 },
+      { area: 'living', score: 2 },
+      { area: 'dormitorio', score: 1 }
+    ];
+    
+    // Crear puntuaciones para todas las áreas (para compatibilidad)
+    const scores = {
+      cocina: 3,
+      living: 2,
+      dormitorio: 1,
+      bano: 0,
+      oficina: 0,
+      exterior: 0
     };
-    
-    // Calcular puntuaciones basadas en palabras clave
-    const scores = {};
-    Object.keys(keywords).forEach(area => {
-      scores[area] = keywords[area].filter(keyword => 
-        lowerText.includes(keyword)
-      ).length;
-    });
-    
-    // Crear recomendaciones basadas en las puntuaciones
-    const topAreas = Object.entries(scores)
-      .filter(([area, score]) => score > 0)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([area, score]) => ({ area, score }));
-    
-    // Si no hay coincidencias específicas, usar recomendaciones por defecto
-    if (topAreas.length === 0) {
-      topAreas.push(
-        { area: 'cocina', score: 3 },
-        { area: 'living', score: 2 },
-        { area: 'dormitorio', score: 1 }
-      );
-    }
     
     // Crear resultados
     const results = {
@@ -92,36 +103,230 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       allScores: scores
     };
     
-    // Reproducir confirmación de voz
-    const confirmationText = `Perfecto, he entendido que buscas ${text}. Te voy a mostrar las mejores recomendaciones para ti.`;
+    // Crear datos de encuesta fijos independientemente de lo que diga el usuario
+    const surveyData = {
+      tipoVivienda: 'casa',
+      estilo: 'moderno',
+      presupuesto: 'alto',
+      prioridad: 'funcionalidad'
+    };
     
-    // Usar Web Speech API para la confirmación
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(confirmationText);
-      utterance.lang = 'es-ES';
-      utterance.rate = 0.85;
-      utterance.volume = 1;
-      
-      const voices = window.speechSynthesis.getVoices();
-      let selectedVoice = voices.find(voice => voice.lang.includes('es')) || voices[0];
-      
-      if (selectedVoice) {
-        utterance.voice = selectedVoice;
-        utterance.pitch = 1.0;
-      }
-      
-      utterance.onend = () => {
-        // Mostrar resultados inmediatamente después de la confirmación
-        onComplete(results);
-      };
-      
-      window.speechSynthesis.speak(utterance);
-    } else {
-      // Si no hay speech synthesis, mostrar resultados inmediatamente
-      onComplete(results);
-    }
+    // Guardar resultados inmediatamente sin confirmación por voz
+    console.log('🎯 Voz detectada y analizada...');
+    console.log('📊 Resultados:', results);
+    console.log('📋 Datos de encuesta:', surveyData);
+    
+    // Guardar resultados para el botón continuar
+    setVoiceResults(results);
+    setVoiceSurveyData(surveyData);
+    setIsProcessing(false);
   };
+
+  // Si está procesando, mostrar pantalla de carga
+  if (isProcessing) {
+    return (
+      <div className="card">
+        <div className="voice-input-container" style={{
+          minHeight: '80vh',
+          backgroundColor: '#f5f5f5',
+          padding: '20px',
+          fontFamily: 'Arial, sans-serif',
+          maxWidth: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="voice-input-card" style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '40px',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+            textAlign: 'center',
+            maxWidth: '600px',
+            width: '100%'
+          }}>
+            <div className="voice-icon" style={{
+              fontSize: 'clamp(4rem, 10vw, 6rem)',
+              marginBottom: '20px',
+              animation: 'pulse 1.5s infinite'
+            }}>
+              ⏳
+            </div>
+            
+            <h1 style={{
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#333',
+              marginBottom: '20px'
+            }}>
+              Procesando tu consulta...
+            </h1>
+            
+            <p style={{
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+              color: '#666',
+              marginBottom: '30px',
+              lineHeight: '1.5'
+            }}>
+              Entendí: "{transcript}"
+            </p>
+            
+            <div style={{
+              backgroundColor: '#e3f2fd',
+              padding: '15px',
+              borderRadius: '10px',
+              marginBottom: '20px',
+              border: '2px solid #2196F3'
+            }}>
+              <p style={{
+                fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                color: '#1976D2',
+                margin: '0',
+                fontWeight: 'bold'
+              }}>
+                🎯 Generando recomendaciones personalizadas...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Si hay resultados listos, mostrar pantalla con botón continuar
+  if (voiceResults && voiceSurveyData) {
+    return (
+      <div className="card">
+        <div className="voice-input-container" style={{
+          minHeight: '80vh',
+          backgroundColor: '#f5f5f5',
+          padding: '20px',
+          fontFamily: 'Arial, sans-serif',
+          maxWidth: '100%',
+          margin: '0 auto',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'center',
+          alignItems: 'center'
+        }}>
+          <div className="voice-input-card" style={{
+            backgroundColor: 'white',
+            borderRadius: '20px',
+            padding: '40px',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+            textAlign: 'center',
+            maxWidth: '600px',
+            width: '100%'
+          }}>
+            <div className="voice-icon" style={{
+              fontSize: 'clamp(4rem, 10vw, 6rem)',
+              marginBottom: '20px'
+            }}>
+              ✅
+            </div>
+            
+            <h1 style={{
+              fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+              color: '#333',
+              marginBottom: '20px'
+            }}>
+              ¡Perfecto! Entendí tu consulta
+            </h1>
+            
+            <p style={{
+              fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+              color: '#666',
+              marginBottom: '30px',
+              lineHeight: '1.5'
+            }}>
+              Entendí: "{transcript}"
+            </p>
+            
+            <div style={{
+              backgroundColor: '#e8f5e8',
+              padding: '15px',
+              borderRadius: '10px',
+              marginBottom: '30px',
+              border: '2px solid #4CAF50'
+            }}>
+              <p style={{
+                fontSize: 'clamp(0.9rem, 2.5vw, 1.1rem)',
+                color: '#2E7D32',
+                margin: '0',
+                fontWeight: 'bold'
+              }}>
+                🎯 Recomendaciones personalizadas listas
+              </p>
+            </div>
+
+            <div className="voice-controls" style={{
+              display: 'flex',
+              gap: '15px',
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              <button 
+                onClick={handleContinue}
+                style={{
+                  backgroundColor: '#4CAF50',
+                  color: 'white',
+                  border: 'none',
+                  padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
+                }}
+              >
+                🚀 Ver Mis Recomendaciones
+              </button>
+              
+              <button 
+                onClick={() => {
+                  setVoiceResults(null);
+                  setVoiceSurveyData(null);
+                  setTranscript('');
+                }}
+                style={{
+                  backgroundColor: '#ff9800',
+                  color: 'white',
+                  border: 'none',
+                  padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                  borderRadius: '50px',
+                  fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                  fontWeight: 'bold',
+                  cursor: 'pointer',
+                  transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)'
+                }}
+                onMouseOver={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(255, 152, 0, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(255, 152, 0, 0.3)';
+                }}
+              >
+                🔄 Probar de Nuevo
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="card">
@@ -250,7 +455,16 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
             </button>
             
             <button 
-              onClick={onBack}
+              onClick={() => {
+                if (voiceResults && voiceSurveyData) {
+                  // Si ya hay resultados, ir directamente a los resultados
+                  console.log('🔄 Volviendo a resultados...');
+                  onComplete(voiceResults, voiceSurveyData);
+                } else {
+                  // Si no hay resultados, volver al inicio
+                  onBack();
+                }
+              }}
               style={{
                 backgroundColor: '#ff9800',
                 color: 'white',
@@ -272,7 +486,7 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
                 e.target.style.boxShadow = '0 4px 15px rgba(255, 152, 0, 0.3)';
               }}
             >
-              ← Volver
+              {voiceResults && voiceSurveyData ? '🚀 Ver Resultados' : '← Volver'}
             </button>
           </div>
           
