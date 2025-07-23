@@ -154,36 +154,6 @@ const Survey = ({ onComplete, onBack }) => {
           border: '2px solid #e9ecef'
         }}>
           <button 
-            className="btn btn-secondary" 
-            onClick={onBack}
-            style={{
-              backgroundColor: '#ff9800',
-              color: 'white',
-              border: 'none',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(255, 152, 0, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#f57c00';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(255, 152, 0, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#ff9800';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(255, 152, 0, 0.3)';
-            }}
-          >
-            ← Volver
-          </button>
-          
-          <button 
             className="btn" 
             onClick={handleSubmit}
             style={{
