@@ -6,6 +6,9 @@ const Results = ({ results, surveyData, onRestart }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [showVoiceInput, setShowVoiceInput] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState(null);
+  const [availableVoices, setAvailableVoices] = useState([]);
+  const [showVoiceSelector, setShowVoiceSelector] = useState(false);
 
   const sections = [
     {
@@ -113,7 +116,6 @@ const Results = ({ results, surveyData, onRestart }) => {
       
       // Mostrar indicador visual para móviles
       if (window.innerWidth <= 768) {
-        // Agregar clase CSS para indicador móvil
         document.body.style.backgroundColor = '#e8f5e8';
       }
     };
@@ -250,25 +252,81 @@ const Results = ({ results, surveyData, onRestart }) => {
       window.speechSynthesis.cancel();
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'es-ES';
-      utterance.rate = 0.85; // Velocidad ligeramente más lenta
+      utterance.lang = 'es-MX'; // Cambiar a español de México
+      utterance.rate = 0.9; // Velocidad ligeramente más rápida
       utterance.volume = 1;
+      utterance.pitch = 1.1; // Pitch ligeramente más alto para voz más clara
 
       // Obtener todas las voces disponibles
       const voices = window.speechSynthesis.getVoices();
       console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
       
-      // Estrategia para voz consistente: usar la primera voz en español disponible
-      let selectedVoice = voices.find(voice => voice.lang.includes('es'));
+      // Priorizar específicamente la voz de Google México
+      const preferredVoices = [
+        'Google español (México)', 'Google español (Mexico)',
+        'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Raul - Spanish (Mexico)',
+        'Google español', 'Google español (España)', 'Google español (Spain)',
+        'Microsoft Helena - Spanish (Spain)', 'Microsoft Pablo - Spanish (Spain)',
+        'Samantha', 'Alex', 'Victoria', 'Diego', 'Carlos', 'Ana', 'Maria'
+      ];
       
-      // Si no hay voces en español, usar la primera disponible
+      let selectedVoice = null;
+      
+      // Buscar primero la voz de Google México específicamente
+      selectedVoice = voices.find(voice => 
+        voice.name.toLowerCase().includes('google') && 
+        (voice.name.toLowerCase().includes('méxico') || voice.name.toLowerCase().includes('mexico'))
+      );
+      
+      if (selectedVoice) {
+        console.log('🎤 Voz de Google México encontrada:', selectedVoice.name);
+      } else {
+        // Si no se encuentra Google México, buscar otras voces preferidas
+        for (const preferredName of preferredVoices) {
+          selectedVoice = voices.find(voice => 
+            voice.name.toLowerCase().includes(preferredName.toLowerCase())
+          );
+          if (selectedVoice) {
+            console.log('🎤 Voz preferida encontrada:', selectedVoice.name);
+            break;
+          }
+        }
+      }
+      
+      // Si no se encuentra una voz preferida, buscar cualquier voz en español de México
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('es-MX') || voice.lang.includes('es-MX')
+        );
+        console.log('🎤 Voz en español de México encontrada:', selectedVoice?.name);
+      }
+      
+      // Si no hay voces en español de México, buscar cualquier voz en español
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.lang.includes('es') || voice.lang.includes('ES')
+        );
+        console.log('🎤 Voz en español encontrada:', selectedVoice?.name);
+      }
+      
+      // Si no hay voces en español, usar la primera voz femenina disponible
+      if (!selectedVoice) {
+        selectedVoice = voices.find(voice => 
+          voice.name.toLowerCase().includes('female') || 
+          voice.name.toLowerCase().includes('woman') ||
+          voice.name.toLowerCase().includes('girl')
+        );
+        console.log('🎤 Voz femenina encontrada:', selectedVoice?.name);
+      }
+      
+      // Si no hay voces femeninas, usar la primera disponible
       if (!selectedVoice && voices.length > 0) {
         selectedVoice = voices[0];
+        console.log('🎤 Primera voz disponible:', selectedVoice.name);
       }
       
       if (selectedVoice) {
         utterance.voice = selectedVoice;
-        utterance.pitch = 1.0; // Pitch estándar para consistencia
         console.log('🎤 Voz seleccionada:', selectedVoice.name, selectedVoice.lang);
       }
 
