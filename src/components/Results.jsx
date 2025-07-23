@@ -9,7 +9,7 @@ const Results = ({ results, surveyData, onRestart }) => {
     const areaNames = topAreas.map(area => getAreaName(area.area));
     
     // Crear mensaje personalizado basado en las áreas
-    const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el área de ${areaNames[0]}. También te sugiero el área de ${areaNames[1]}. Y finalmente, considera el área de ${areaNames[2]}. Estas áreas tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
+    const speechText = `Basándome en tus respuestas, te recomiendo visitar principalmente el ${areaNames[0]}. También te sugiero el ${areaNames[1]}. Y finalmente, considera el ${areaNames[2]}. Estos pabellones tienen los productos que mejor se adaptan a tus necesidades. ¡Disfruta tu visita al evento!`;
     
     // Usar Web Speech API con selección inteligente de voz
     speakWithTTS(speechText);
@@ -159,38 +159,44 @@ const Results = ({ results, surveyData, onRestart }) => {
 
   const getAreaName = (area) => {
     const areaNames = {
-      cocina: 'Cocina y Electrodomésticos',
-      living: 'Living y Comedor',
-      dormitorio: 'Dormitorio y Descanso',
-      bano: 'Baño y Sanitarios',
-      oficina: 'Oficina y Trabajo',
-      exterior: 'Exterior y Jardín'
+      cocina: 'Centro de Convenciones de Córdoba',
+      living: 'Pabellón Azul',
+      dormitorio: 'Pabellón Amarillo',
+      bano: 'Centro de Convenciones de Córdoba',
+      oficina: 'Pabellón Azul',
+      exterior: 'Pabellón Amarillo'
     };
     return areaNames[area] || area;
   };
 
   const getAreaIcon = (area) => {
     const areaIcons = {
-      cocina: '🍳',
-      living: '🛋️',
-      dormitorio: '🛏️',
-      bano: '🚿',
-      oficina: '💼',
-      exterior: '🌿'
+      cocina: '🏢',
+      living: '🔵',
+      dormitorio: '🟡',
+      bano: '🏢',
+      oficina: '🔵',
+      exterior: '🟡'
     };
     return areaIcons[area] || '🏠';
   };
 
   const getAreaDescription = (area) => {
     const areaDescriptions = {
-      cocina: 'Encuentra todo para tu cocina: electrodomésticos, muebles y accesorios.',
-      living: 'Muebles, decoración y elementos para crear el living de tus sueños.',
-      dormitorio: 'Camas, roperos y todo para un dormitorio confortable y elegante.',
-      bano: 'Sanitarios, grifería y accesorios para renovar tu baño.',
-      oficina: 'Muebles y equipamiento para crear tu espacio de trabajo ideal.',
-      exterior: 'Muebles de jardín, plantas y decoración para exteriores.'
+      cocina: 'El Centro de Convenciones de Córdoba alberga las principales exposiciones y stands del evento.',
+      living: 'El Pabellón Azul presenta una amplia variedad de productos y servicios especializados.',
+      dormitorio: 'El Pabellón Amarillo ofrece las últimas tendencias y novedades del sector.',
+      bano: 'El Centro de Convenciones de Córdoba alberga las principales exposiciones y stands del evento.',
+      oficina: 'El Pabellón Azul presenta una amplia variedad de productos y servicios especializados.',
+      exterior: 'El Pabellón Amarillo ofrece las últimas tendencias y novedades del sector.'
     };
     return areaDescriptions[area] || 'Productos especializados para esta área.';
+  };
+
+  // Función para abrir nueva pestaña con "Te podría interesar"
+  const openTePodriaInteresar = () => {
+    const url = 'https://estilo-casa-2025.vercel.app/te-podria-interesar';
+    window.open(url, '_blank');
   };
 
   return (
@@ -271,7 +277,7 @@ const Results = ({ results, surveyData, onRestart }) => {
         <div className="restart-section">
           <button 
             className="btn restart-btn"
-            onClick={onRestart}
+            onClick={openTePodriaInteresar}
             style={{
               backgroundColor: '#2196F3',
               color: 'white',
@@ -296,7 +302,7 @@ const Results = ({ results, surveyData, onRestart }) => {
               e.target.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.3)';
             }}
           >
-            🔄 Volver al Inicio
+            🔍 Te podría interesar
           </button>
         </div>
       </div>
