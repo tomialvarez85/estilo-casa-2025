@@ -112,18 +112,14 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       }
       
       utterance.onend = () => {
-        // Esperar 2 segundos después de la confirmación antes de mostrar resultados
-        setTimeout(() => {
-          onComplete(results);
-        }, 2000);
+        // Mostrar resultados inmediatamente después de la confirmación
+        onComplete(results);
       };
       
       window.speechSynthesis.speak(utterance);
     } else {
       // Si no hay speech synthesis, mostrar resultados inmediatamente
-      setTimeout(() => {
-        onComplete(results);
-      }, 2000);
+      onComplete(results);
     }
   };
 
