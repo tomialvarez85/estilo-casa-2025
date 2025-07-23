@@ -92,8 +92,39 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       allScores: scores
     };
     
-    // Llamar a onComplete con los resultados
-    onComplete(results);
+    // Reproducir confirmación de voz
+    const confirmationText = `Perfecto, he entendido que buscas ${text}. Te voy a mostrar las mejores recomendaciones para ti.`;
+    
+    // Usar Web Speech API para la confirmación
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(confirmationText);
+      utterance.lang = 'es-ES';
+      utterance.rate = 0.85;
+      utterance.volume = 1;
+      
+      const voices = window.speechSynthesis.getVoices();
+      let selectedVoice = voices.find(voice => voice.lang.includes('es')) || voices[0];
+      
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+        utterance.pitch = 1.0;
+      }
+      
+      utterance.onend = () => {
+        // Esperar 2 segundos después de la confirmación antes de mostrar resultados
+        setTimeout(() => {
+          onComplete(results);
+        }, 2000);
+      };
+      
+      window.speechSynthesis.speak(utterance);
+    } else {
+      // Si no hay speech synthesis, mostrar resultados inmediatamente
+      setTimeout(() => {
+        onComplete(results);
+      }, 2000);
+    }
   };
 
   return (

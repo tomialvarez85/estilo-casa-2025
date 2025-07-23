@@ -132,18 +132,6 @@ const Results = ({ results, surveyData, onRestart }) => {
       );
     }
     
-    // Crear datos de encuesta simulados
-    const simulatedSurveyData = {
-      tipoVivienda: 'Detectado por voz',
-      estilo: 'Basado en tu consulta',
-      presupuesto: 'Variado',
-      prioridad: 'Personalizada'
-    };
-    
-    // Actualizar los resultados
-    results.topAreas = topAreas;
-    surveyData = simulatedSurveyData;
-    
     // Reproducir confirmación de voz
     const confirmationText = `Perfecto, he entendido que buscas ${text}. Te voy a mostrar las mejores recomendaciones para ti.`;
     speakWithTTS(confirmationText);
