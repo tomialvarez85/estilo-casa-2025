@@ -876,20 +876,18 @@ const Results = ({ results, surveyData, onRestart }) => {
         margin: '0 auto',
         padding: '20px'
       }}>
-        <h1 className="result-title" style={{
-          fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
+        <h1 style={{
+          fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
           textAlign: 'center',
-          marginBottom: '30px',
-          wordWrap: 'break-word'
-        }}>🎯 Tus Recomendaciones Personalizadas</h1>
+          marginBottom: 'clamp(20px, 4vw, 40px)',
+          color: '#2c3e50',
+          fontWeight: '700',
+          lineHeight: '1.2'
+        }}>
+          🎯 Áreas Recomendadas para Visitar
+        </h1>
         
         <div className="recommendations">
-          <h2 style={{
-            fontSize: 'clamp(1.2rem, 3vw, 1.5rem)',
-            textAlign: 'center',
-            marginBottom: '20px'
-          }}>📍 Áreas Recomendadas para Visitar:</h2>
-          
           {/* Mostrar solo pabellones únicos */}
           {(() => {
             const uniqueAreas = results.topAreas.filter((area, index, self) => 
