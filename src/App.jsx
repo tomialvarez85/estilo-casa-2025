@@ -24,13 +24,27 @@ function App() {
 
   const handleVoiceRecognition = (voiceResults, voiceSurveyData) => {
     console.log('🎯 handleVoiceRecognition llamado con:', { voiceResults, voiceSurveyData });
+    console.log('🎯 Estado actual - currentStep:', currentStep);
+    console.log('🎯 Función handleVoiceRecognition existe:', typeof handleVoiceRecognition);
     
-    // Actualizar estados de forma síncrona
-    setSurveyData(voiceSurveyData);
-    setResults(voiceResults);
-    setCurrentStep('results');
-    
-    console.log('🎯 Estados actualizados - currentStep: results');
+    try {
+      setSurveyData(voiceSurveyData);
+      setResults(voiceResults);
+      setCurrentStep('results');
+      
+      console.log('🎯 Estados actualizados:');
+      console.log('- surveyData:', voiceSurveyData);
+      console.log('- results:', voiceResults);
+      console.log('- currentStep: results');
+      
+      // Verificar que los estados se actualizaron correctamente
+      setTimeout(() => {
+        console.log('🎯 Verificación después de 100ms:');
+        console.log('- currentStep debería ser "results"');
+      }, 100);
+    } catch (error) {
+      console.error('❌ Error en handleVoiceRecognition:', error);
+    }
   };
 
   const showVoiceInput = () => {

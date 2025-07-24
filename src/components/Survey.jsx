@@ -107,8 +107,8 @@ const Survey = ({ onComplete, onBack }) => {
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: isMobile ? '100px' : '30px',
-      maxWidth: isMobile ? '100%' : '1200px',
+      paddingBottom: isMobile ? '100px' : '25px',
+      maxWidth: isMobile ? '100%' : '1100px',
       margin: '0 auto',
       width: '100%',
       backgroundColor: isMobile ? 'transparent' : '#f8f9fa'
@@ -127,16 +127,16 @@ const Survey = ({ onComplete, onBack }) => {
       <div className="survey-header" style={{
         padding: isMobile 
           ? 'clamp(20px, 4vw, 40px) clamp(15px, 3vw, 30px)'
-          : '20px 30px 15px 30px',
+          : '20px 25px 15px 25px',
         textAlign: 'center',
         backgroundColor: isMobile ? 'transparent' : 'white',
         borderRadius: isMobile ? '0' : '15px 15px 0 0',
         margin: isMobile ? '0' : '15px 15px 0 15px',
-        boxShadow: isMobile ? 'none' : '0 2px 10px rgba(0, 0, 0, 0.1)'
+        boxShadow: isMobile ? 'none' : '0 3px 12px rgba(0, 0, 0, 0.1)'
       }}>
         <h1 className="survey-title" style={{
-          fontSize: isMobile ? 'clamp(1.5rem, 4vw, 2.5rem)' : '2rem',
-          marginBottom: isMobile ? 'clamp(10px, 2vw, 20px)' : '10px',
+          fontSize: isMobile ? 'clamp(1.5rem, 4vw, 2.5rem)' : '1.8rem',
+          marginBottom: isMobile ? 'clamp(10px, 2vw, 20px)' : '12px',
           color: '#2c3e50',
           fontWeight: isMobile ? '600' : '700'
         }}>📋 Encuesta de Orientación</h1>
@@ -177,7 +177,7 @@ const Survey = ({ onComplete, onBack }) => {
         overflowY: isMobile ? 'auto' : 'visible',
         padding: isMobile 
           ? 'clamp(10px, 2vw, 30px)'
-          : '0 30px 20px 30px',
+          : '0 25px 20px 25px',
         display: 'grid',
         gap: isMobile ? 'clamp(20px, 4vw, 40px)' : '15px',
         gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
@@ -185,7 +185,7 @@ const Survey = ({ onComplete, onBack }) => {
         backgroundColor: isMobile ? 'transparent' : 'white',
         borderRadius: isMobile ? '0' : '0 0 15px 15px',
         margin: isMobile ? '0' : '0 15px 15px 15px',
-        boxShadow: isMobile ? 'none' : '0 2px 10px rgba(0, 0, 0, 0.1)'
+        boxShadow: isMobile ? 'none' : '0 3px 12px rgba(0, 0, 0, 0.1)'
       }}>
         {questions.map((question, index) => (
           <div key={question.id} className="compact-question-section" style={{
@@ -237,7 +237,7 @@ const Survey = ({ onComplete, onBack }) => {
             
             <div className="compact-options-grid" style={{
               display: 'grid',
-              gap: isMobile ? 'clamp(8px, 2vw, 15px)' : '10px',
+              gap: isMobile ? 'clamp(8px, 2vw, 15px)' : '8px',
               gridTemplateColumns: isMobile 
                 ? 'repeat(auto-fit, minmax(120px, 1fr))'
                 : question.options.length === 3 
@@ -258,24 +258,24 @@ const Survey = ({ onComplete, onBack }) => {
                     border: `2px solid ${answers[question.id] === option.value 
                       ? (isMobile ? '#3498db' : '#4CAF50') 
                       : (isMobile ? '#e9ecef' : '#e1e5e9')}`,
-                    borderRadius: isMobile ? '15px' : '12px',
-                    padding: isMobile ? 'clamp(15px, 3vw, 20px)' : '12px 8px',
+                    borderRadius: isMobile ? '15px' : '10px',
+                    padding: isMobile ? 'clamp(15px, 3vw, 20px)' : '10px 8px',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    gap: isMobile ? 'clamp(5px, 1.5vw, 10px)' : '5px',
+                    gap: isMobile ? 'clamp(5px, 1.5vw, 10px)' : '4px',
                     textAlign: 'center',
-                    minHeight: isMobile ? 'clamp(80px, 15vw, 100px)' : '60px',
+                    minHeight: isMobile ? 'clamp(80px, 15vw, 100px)' : '55px',
                     justifyContent: 'center',
                     boxShadow: answers[question.id] === option.value 
                       ? (isMobile 
                           ? '0 4px 15px rgba(52, 152, 219, 0.3)' 
-                          : '0 4px 12px rgba(76, 175, 80, 0.3)')
+                          : '0 3px 8px rgba(76, 175, 80, 0.3)')
                       : (isMobile 
                           ? '0 2px 8px rgba(0, 0, 0, 0.1)' 
-                          : '0 2px 6px rgba(0, 0, 0, 0.08)'),
+                          : '0 2px 4px rgba(0, 0, 0, 0.08)'),
                     transform: answers[question.id] === option.value 
                       ? 'translateY(-1px)' 
                       : 'translateY(0)',
@@ -286,7 +286,7 @@ const Survey = ({ onComplete, onBack }) => {
                       e.target.style.transform = isMobile ? 'translateY(-1px)' : 'translateY(-1px)';
                       e.target.style.boxShadow = isMobile 
                         ? '0 4px 12px rgba(0, 0, 0, 0.15)' 
-                        : '0 4px 10px rgba(0, 0, 0, 0.12)';
+                        : '0 3px 8px rgba(0, 0, 0, 0.12)';
                     }
                   }}
                   onMouseOut={(e) => {
@@ -294,12 +294,12 @@ const Survey = ({ onComplete, onBack }) => {
                       e.target.style.transform = 'translateY(0)';
                       e.target.style.boxShadow = isMobile 
                         ? '0 2px 8px rgba(0, 0, 0, 0.1)' 
-                        : '0 2px 6px rgba(0, 0, 0, 0.08)';
+                        : '0 2px 4px rgba(0, 0, 0, 0.08)';
                     }
                   }}
                 >
                   <div className="compact-option-icon" style={{
-                    fontSize: isMobile ? 'clamp(1.5rem, 4vw, 2rem)' : '1.5rem',
+                    fontSize: isMobile ? 'clamp(1.5rem, 4vw, 2rem)' : '1.4rem',
                     marginBottom: isMobile ? 'clamp(3px, 1vw, 5px)' : '3px'
                   }}>{option.icon}</div>
                   <span className="compact-option-label" style={{
@@ -355,7 +355,7 @@ const Survey = ({ onComplete, onBack }) => {
                 : '15px 30px',
               fontSize: isMobile ? 'clamp(1rem, 3vw, 1.2rem)' : '1rem',
               fontWeight: 'bold',
-              borderRadius: isMobile ? '25px' : '20px',
+              borderRadius: isMobile ? '25px' : '18px',
               cursor: answeredCount < totalQuestions ? 'not-allowed' : 'pointer',
               boxShadow: isMobile 
                 ? '0 4px 8px rgba(76, 175, 80, 0.3)' 
@@ -380,7 +380,7 @@ const Survey = ({ onComplete, onBack }) => {
                 e.target.style.transform = isMobile ? 'translateY(-2px)' : 'translateY(-1px)';
                 e.target.style.boxShadow = isMobile 
                   ? '0 6px 12px rgba(76, 175, 80, 0.4)' 
-                  : '0 6px 15px rgba(0, 0, 0, 0.2)';
+                  : '0 6px 18px rgba(0, 0, 0, 0.2)';
               }
             }}
             onMouseOut={(e) => {

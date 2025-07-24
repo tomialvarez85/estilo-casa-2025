@@ -539,10 +539,6 @@ body {
   100% { transform: scale(1); }
 }
 
-.voice-icon {
-  animation: pulse 1.5s infinite;
-}
-
 /* Mejoras en los resultados */
 .recommendation-item {
   margin-bottom: 20px;

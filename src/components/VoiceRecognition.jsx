@@ -103,12 +103,12 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       allScores: scores
     };
     
-    // Crear datos de encuesta fijos independientemente de lo que diga el usuario
+    // Crear datos de encuesta simulados
     const surveyData = {
-      tipoVivienda: 'casa',
-      estilo: 'moderno',
-      presupuesto: 'alto',
-      prioridad: 'funcionalidad'
+      tipoVivienda: 'Detectado por voz',
+      estilo: 'Basado en tu consulta',
+      presupuesto: 'Variado',
+      prioridad: 'Personalizada'
     };
     
     // Guardar resultados inmediatamente sin confirmación por voz
