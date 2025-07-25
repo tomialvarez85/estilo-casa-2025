@@ -306,53 +306,74 @@ const Results = ({ results, surveyData, onRestart }) => {
     let selectedVoice = null;
     
     if (isMobile) {
-      console.log('📱 Aplicando estrategia móvil para voces femeninas en español');
+      console.log('📱 Aplicando estrategia móvil para Sandy(es-ES)');
       
-      // Estrategia específica para móviles - priorizar voces femeninas en español
-      const femaleSpanishVoices = [
+      // Estrategia específica para móviles - priorizar Sandy(es-ES) - Default
+      const mobilePreferredVoices = [
+        'Sandy(es-ES) - Default', 'Sandy', 'Sandy(es-ES)',
         'Google español (México)', 'Google español (Mexico)',
         'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Helena - Spanish (Spain)',
         'Samantha', 'Victoria', 'Ana', 'Maria', 'Carmen', 'Isabel', 'Rosa'
       ];
       
-      // Buscar voces femeninas específicas en español
+      // Buscar Sandy(es-ES) - Default específicamente primero
       selectedVoice = voices.find(voice => 
-        femaleSpanishVoices.some(name => voice.name.includes(name))
+        voice.name.includes('Sandy(es-ES) - Default') || 
+        voice.name.includes('Sandy(es-ES)') ||
+        voice.name.includes('Sandy')
       );
       
       if (selectedVoice) {
-        console.log('📱 Voz femenina en español encontrada:', selectedVoice.name);
+        console.log('📱 Voz Sandy(es-ES) encontrada:', selectedVoice.name);
       } else {
-        // Buscar cualquier voz en español de México
+        // Si no encuentra Sandy, buscar otras voces preferidas
         selectedVoice = voices.find(voice => 
-          voice.lang === 'es-MX' || voice.lang === 'es-MX'
+          mobilePreferredVoices.some(name => voice.name.includes(name))
         );
         
         if (selectedVoice) {
-          console.log('📱 Voz en español de México encontrada:', selectedVoice.name);
+          console.log('📱 Voz preferida móvil encontrada:', selectedVoice.name);
         } else {
-          // Buscar cualquier voz en español
+          // Buscar cualquier voz en español de España
           selectedVoice = voices.find(voice => 
-            voice.lang.startsWith('es')
+            voice.lang === 'es-ES' || voice.lang === 'es-ES'
           );
           
           if (selectedVoice) {
-            console.log('📱 Voz en español encontrada:', selectedVoice.name);
+            console.log('📱 Voz en español de España encontrada:', selectedVoice.name);
           } else {
-            // Buscar voces femeninas del sistema
+            // Buscar cualquier voz en español de México
             selectedVoice = voices.find(voice => 
-              voice.name.toLowerCase().includes('samantha') ||
-              voice.name.toLowerCase().includes('victoria') ||
-              voice.name.toLowerCase().includes('ana') ||
-              voice.name.toLowerCase().includes('maria')
+              voice.lang === 'es-MX' || voice.lang === 'es-MX'
             );
             
             if (selectedVoice) {
-              console.log('📱 Voz femenina del sistema encontrada:', selectedVoice.name);
+              console.log('📱 Voz en español de México encontrada:', selectedVoice.name);
             } else {
-              // Último recurso: primera voz disponible
-              selectedVoice = voices[0];
-              console.log('📱 Usando primera voz disponible:', selectedVoice?.name);
+              // Buscar cualquier voz en español
+              selectedVoice = voices.find(voice => 
+                voice.lang.startsWith('es')
+              );
+              
+              if (selectedVoice) {
+                console.log('📱 Voz en español encontrada:', selectedVoice.name);
+              } else {
+                // Buscar voces femeninas del sistema
+                selectedVoice = voices.find(voice => 
+                  voice.name.toLowerCase().includes('samantha') ||
+                  voice.name.toLowerCase().includes('victoria') ||
+                  voice.name.toLowerCase().includes('ana') ||
+                  voice.name.toLowerCase().includes('maria')
+                );
+                
+                if (selectedVoice) {
+                  console.log('📱 Voz femenina del sistema encontrada:', selectedVoice.name);
+                } else {
+                  // Último recurso: primera voz disponible
+                  selectedVoice = voices[0];
+                  console.log('📱 Usando primera voz disponible:', selectedVoice?.name);
+                }
+              }
             }
           }
         }
