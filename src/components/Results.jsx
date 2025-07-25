@@ -306,27 +306,27 @@ const Results = ({ results, surveyData, onRestart }) => {
     let selectedVoice = null;
     
     if (isMobile) {
-      console.log('📱 Aplicando estrategia móvil para Sandy(es-ES)');
+      console.log('📱 Aplicando estrategia móvil para Shelley(es-ES)');
       
-      // Estrategia específica para móviles - priorizar Sandy(es-ES) - Default
+      // Estrategia específica para móviles - priorizar Shelley(es-ES) - Default
       const mobilePreferredVoices = [
-        'Sandy(es-ES) - Default', 'Sandy', 'Sandy(es-ES)',
+        'Shelley(es-ES) - Default', 'Shelley', 'Shelley(es-ES)',
         'Google español (México)', 'Google español (Mexico)',
         'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Helena - Spanish (Spain)',
         'Samantha', 'Victoria', 'Ana', 'Maria', 'Carmen', 'Isabel', 'Rosa'
       ];
       
-      // Buscar Sandy(es-ES) - Default específicamente primero
+      // Buscar Shelley(es-ES) - Default específicamente primero
       selectedVoice = voices.find(voice => 
-        voice.name.includes('Sandy(es-ES) - Default') || 
-        voice.name.includes('Sandy(es-ES)') ||
-        voice.name.includes('Sandy')
+        voice.name.includes('Shelley(es-ES) - Default') || 
+        voice.name.includes('Shelley(es-ES)') ||
+        voice.name.includes('Shelley')
       );
       
       if (selectedVoice) {
-        console.log('📱 Voz Sandy(es-ES) encontrada:', selectedVoice.name);
+        console.log('📱 Voz Shelley(es-ES) encontrada:', selectedVoice.name);
       } else {
-        // Si no encuentra Sandy, buscar otras voces preferidas
+        // Si no encuentra Shelley, buscar otras voces preferidas
         selectedVoice = voices.find(voice => 
           mobilePreferredVoices.some(name => voice.name.includes(name))
         );
