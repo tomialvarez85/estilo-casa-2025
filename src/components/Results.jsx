@@ -245,33 +245,53 @@ const Results = ({ results, surveyData, onRestart }) => {
     setShowTePodriaInteresar(false);
   };
 
-  // Función para usar Web Speech API con selección inteligente de voz
-  const speakWithTTS = (text) => {
-    if ('speechSynthesis' in window) {
-      // Cancelar cualquier reproducción anterior
-      window.speechSynthesis.cancel();
+  // Función para mostrar selector de voces
+  const displayVoiceSelector = () => {
+    const voices = window.speechSynthesis.getVoices();
+    console.log('🎤 Todas las voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
+    
+    // Crear lista de voces para mostrar
+    const voiceList = voices.map(voice => 
+      `${voice.name} (${voice.lang}) - ${voice.default ? 'DEFAULT' : ''}`
+    ).join('\n');
+    
+    alert(`🎤 Voces disponibles en tu dispositivo:\n\n${voiceList}\n\nRevisa la consola para más detalles.`);
+  };
+
+  // Función para probar una voz específica
+  const testSpecificVoice = (voiceName) => {
+    const voices = window.speechSynthesis.getVoices();
+    const selectedVoice = voices.find(voice => voice.name.includes(voiceName));
+    
+    if (selectedVoice) {
+      const utterance = new SpeechSynthesisUtterance("Hola, esta es una prueba de la voz " + selectedVoice.name);
+      utterance.voice = selectedVoice;
+      utterance.lang = 'es-MX';
+      utterance.rate = 0.9;
+      utterance.volume = 1;
+      utterance.pitch = 1.1;
       
-      const utterance = new SpeechSynthesisUtterance(text);
-      
-      // Obtener todas las voces disponibles
-      let voices = window.speechSynthesis.getVoices();
-      
-      // Si las voces no están cargadas, esperar a que se carguen
-      if (voices.length === 0) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          voices = window.speechSynthesis.getVoices();
-          selectAndSpeak(utterance, voices);
-        };
-      } else {
-        selectAndSpeak(utterance, voices);
-      }
+      console.log('🎤 Probando voz específica:', selectedVoice.name);
+      window.speechSynthesis.speak(utterance);
     } else {
-      console.log('Speech synthesis not supported');
+      alert(`No se encontró la voz "${voiceName}"`);
     }
   };
 
-  const selectAndSpeak = (utterance, voices) => {
-    // Detectar si es dispositivo móvil y navegador
+  // Función para usar Web Speech API con selección inteligente de voz
+  const speakWithTTS = (text) => {
+    // Cancelar cualquier audio actual
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Obtener todas las voces disponibles
+    const voices = window.speechSynthesis.getVoices();
+    
+    // Log de todas las voces disponibles para debugging
+    console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
+    
+    // Detectar si es dispositivo móvil
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -283,125 +303,153 @@ const Results = ({ results, surveyData, onRestart }) => {
       userAgent: navigator.userAgent
     });
     
-    // Log de todas las voces disponibles
-    console.log('🎤 Voces disponibles:', voices.map(v => `${v.name} (${v.lang})`));
-    
     let selectedVoice = null;
     
     if (isMobile) {
       console.log('📱 Aplicando estrategia móvil para voces femeninas en español');
       
-      // Estrategia específica para móviles (Safari iOS y Chrome Android)
-      const mobileFemaleSpanishVoices = [
-        // Voces de Safari iOS
-        'Samantha', 'Victoria', 'Karen', 'Alex', 'Daniel',
-        // Voces de Google (Android)
+      // Estrategia específica para móviles - priorizar voces femeninas en español
+      const femaleSpanishVoices = [
         'Google español (México)', 'Google español (Mexico)',
-        // Voces de Microsoft
         'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Helena - Spanish (Spain)',
-        // Otras voces femeninas
-        'Ana', 'Maria', 'Carmen', 'Isabel', 'Rosa', 'Lucia', 'Elena'
+        'Samantha', 'Victoria', 'Ana', 'Maria', 'Carmen', 'Isabel', 'Rosa'
       ];
       
       // Buscar voces femeninas específicas en español
-      for (const voiceName of mobileFemaleSpanishVoices) {
-        const foundVoice = voices.find(voice => 
-          voice.name.includes(voiceName) && 
-          (voice.lang.includes('es') || voice.lang.includes('ES'))
-        );
-        if (foundVoice) {
-          selectedVoice = foundVoice;
-          console.log(`📱 Voz femenina en español encontrada: ${foundVoice.name}`);
-          break;
-        }
-      }
+      selectedVoice = voices.find(voice => 
+        femaleSpanishVoices.some(name => voice.name.includes(name))
+      );
       
-      // Si no se encontró voz femenina específica, buscar cualquier voz en español
-      if (!selectedVoice) {
-        const spanishVoice = voices.find(voice => 
-          voice.lang.includes('es') || voice.lang.includes('ES')
+      if (selectedVoice) {
+        console.log('📱 Voz femenina en español encontrada:', selectedVoice.name);
+      } else {
+        // Buscar cualquier voz en español de México
+        selectedVoice = voices.find(voice => 
+          voice.lang === 'es-MX' || voice.lang === 'es-MX'
         );
-        if (spanishVoice) {
-          selectedVoice = spanishVoice;
-          console.log(`📱 Voz en español encontrada: ${spanishVoice.name}`);
-        }
-      }
-      
-      // Como último recurso, buscar cualquier voz femenina
-      if (!selectedVoice) {
-        const femaleVoice = voices.find(voice => 
-          voice.name.toLowerCase().includes('female') ||
-          voice.name.toLowerCase().includes('woman') ||
-          voice.name.toLowerCase().includes('girl') ||
-          ['Samantha', 'Victoria', 'Karen', 'Ana', 'Maria'].some(name => 
-            voice.name.includes(name)
-          )
-        );
-        if (femaleVoice) {
-          selectedVoice = femaleVoice;
-          console.log(`📱 Voz femenina encontrada: ${femaleVoice.name}`);
+        
+        if (selectedVoice) {
+          console.log('📱 Voz en español de México encontrada:', selectedVoice.name);
+        } else {
+          // Buscar cualquier voz en español
+          selectedVoice = voices.find(voice => 
+            voice.lang.startsWith('es')
+          );
+          
+          if (selectedVoice) {
+            console.log('📱 Voz en español encontrada:', selectedVoice.name);
+          } else {
+            // Buscar voces femeninas del sistema
+            selectedVoice = voices.find(voice => 
+              voice.name.toLowerCase().includes('samantha') ||
+              voice.name.toLowerCase().includes('victoria') ||
+              voice.name.toLowerCase().includes('ana') ||
+              voice.name.toLowerCase().includes('maria')
+            );
+            
+            if (selectedVoice) {
+              console.log('📱 Voz femenina del sistema encontrada:', selectedVoice.name);
+            } else {
+              // Último recurso: primera voz disponible
+              selectedVoice = voices[0];
+              console.log('📱 Usando primera voz disponible:', selectedVoice?.name);
+            }
+          }
         }
       }
     } else {
-      // Estrategia para desktop (mantener Google México como prioridad)
-      console.log('🖥️ Aplicando estrategia desktop');
+      // Estrategia para desktop - priorizar Google México
+      console.log('💻 Aplicando estrategia desktop para Google México');
       
-      const preferredVoices = [
-        'Google español (México)', 'Google español (Mexico)',
-        'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Raul - Spanish (Mexico)',
-        'Microsoft Helena - Spanish (Spain)', 'Microsoft Pablo - Spanish (Spain)'
-      ];
+      // Buscar Google México específicamente
+      selectedVoice = voices.find(voice => 
+        voice.name.includes('Google español (México)') || 
+        voice.name.includes('Google español (Mexico)')
+      );
       
-      // Buscar voces preferidas
-      for (const voiceName of preferredVoices) {
-        const foundVoice = voices.find(voice => voice.name.includes(voiceName));
-        if (foundVoice) {
-          selectedVoice = foundVoice;
-          console.log(`🖥️ Voz preferida encontrada: ${foundVoice.name}`);
-          break;
-        }
-      }
-      
-      // Si no se encontró voz preferida, buscar cualquier voz en español
-      if (!selectedVoice) {
-        const spanishVoice = voices.find(voice => 
-          voice.lang.includes('es') || voice.lang.includes('ES')
+      if (selectedVoice) {
+        console.log('🎤 Voz de Google México encontrada:', selectedVoice.name);
+      } else {
+        // Buscar otras voces preferidas
+        const preferredVoices = [
+          'Google español (España)', 'Google español (Spain)',
+          'Microsoft Sabina - Spanish (Mexico)', 'Microsoft Helena - Spanish (Spain)',
+          'Microsoft Pablo - Spanish (Spain)', 'Microsoft Raul - Spanish (Mexico)'
+        ];
+        
+        selectedVoice = voices.find(voice => 
+          preferredVoices.some(name => voice.name.includes(name))
         );
-        if (spanishVoice) {
-          selectedVoice = spanishVoice;
-          console.log(`🖥️ Voz en español encontrada: ${spanishVoice.name}`);
+        
+        if (selectedVoice) {
+          console.log('🎤 Voz preferida encontrada:', selectedVoice.name);
+        } else {
+          // Buscar cualquier voz en español de México
+          selectedVoice = voices.find(voice => 
+            voice.lang === 'es-MX'
+          );
+          
+          if (selectedVoice) {
+            console.log('🎤 Voz en español de México encontrada:', selectedVoice.name);
+          } else {
+            // Buscar cualquier voz en español
+            selectedVoice = voices.find(voice => 
+              voice.lang.startsWith('es')
+            );
+            
+            if (selectedVoice) {
+              console.log('🎤 Voz en español encontrada:', selectedVoice.name);
+            } else {
+              // Buscar voces femeninas
+              selectedVoice = voices.find(voice => 
+                voice.name.toLowerCase().includes('samantha') ||
+                voice.name.toLowerCase().includes('victoria') ||
+                voice.name.toLowerCase().includes('alex') ||
+                voice.name.toLowerCase().includes('karen')
+              );
+              
+              if (selectedVoice) {
+                console.log('🎤 Voz femenina encontrada:', selectedVoice.name);
+              } else {
+                // Último recurso: primera voz disponible
+                selectedVoice = voices[0];
+                console.log('🎤 Usando primera voz disponible:', selectedVoice?.name);
+              }
+            }
+          }
         }
       }
-    }
-    
-    // Si no se encontró ninguna voz, usar la primera disponible
-    if (!selectedVoice && voices.length > 0) {
-      selectedVoice = voices[0];
-      console.log(`🎤 Usando primera voz disponible: ${selectedVoice.name}`);
     }
     
     if (selectedVoice) {
       utterance.voice = selectedVoice;
-      utterance.lang = selectedVoice.lang || 'es-MX';
-      utterance.rate = 0.9;
-      utterance.volume = 1;
-      utterance.pitch = 1.1;
-      
-      console.log(`🎤 Voz seleccionada: ${selectedVoice.name} (${selectedVoice.lang})`);
-      console.log('🔊 Iniciando reproducción de voz');
-      
-      utterance.onend = () => {
-        console.log('✅ Reproducción de voz completada');
-      };
-      
-      utterance.onerror = (event) => {
-        console.error('❌ Error en reproducción de voz:', event.error);
-      };
-      
-      window.speechSynthesis.speak(utterance);
-    } else {
-      console.log('❌ No se encontró ninguna voz disponible');
+      console.log('🎤 Voz seleccionada:', selectedVoice.name, `(${selectedVoice.lang})`);
     }
+    
+    // Configurar el utterance
+    utterance.lang = 'es-MX';
+    utterance.rate = 0.9;  // Velocidad (0.1 - 10)
+    utterance.volume = 1;  // Volumen (0 - 1)
+    utterance.pitch = 1.1; // Tono (0 - 2)
+    
+    // Eventos para debugging
+    utterance.onstart = () => {
+      console.log('🔊 Iniciando reproducción de voz');
+      if (isMobile) {
+        console.log('📱 Indicador visual móvil activado');
+      }
+    };
+    
+    utterance.onend = () => {
+      console.log('✅ Reproducción de voz completada');
+    };
+    
+    utterance.onerror = (event) => {
+      console.error('❌ Error en reproducción de voz:', event.error);
+    };
+    
+    // Reproducir
+    window.speechSynthesis.speak(utterance);
   };
 
   // Función para leer las recomendaciones en voz alta
@@ -975,6 +1023,35 @@ const Results = ({ results, surveyData, onRestart }) => {
             }}
           >
             {isSpeaking ? '🔇 Detener Audio' : '🔊 Escuchar Recomendaciones'}
+          </button>
+          
+          <button 
+            className="btn"
+            onClick={displayVoiceSelector}
+            style={{
+              backgroundColor: '#9C27B0',
+              margin: '10px',
+              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
+              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
+              fontWeight: 'bold',
+              borderRadius: '25px',
+              border: 'none',
+              cursor: 'pointer',
+              color: 'white',
+              boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)',
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 12px rgba(156, 39, 176, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 8px rgba(156, 39, 176, 0.3)';
+            }}
+          >
+            🎤 Ver Voces Disponibles
           </button>
         </div>
 

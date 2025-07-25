@@ -76,7 +76,7 @@ function App() {
               marginBottom: '20px',
               fontWeight: '700'
             }}>
-              🏠 Bienvenido a Estilo Casa 2025
+              🏠 Bienvenido a Expo Estilo Casa 2025
             </h1>
             
             <p style={{
