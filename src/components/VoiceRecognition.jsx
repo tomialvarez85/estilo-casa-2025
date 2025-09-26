@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../supabaseClient';
 
 const VoiceRecognition = ({ onComplete, onBack }) => {
   const [isListening, setIsListening] = useState(false);
@@ -19,12 +20,61 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
   }, [shouldRedirect, voiceResults, voiceSurveyData, onComplete]);
 
   // Función para continuar a los resultados
-  const handleContinue = () => {
+  const handleContinue = async () => {
     console.log('🚀 handleContinue llamado');
     console.log('📊 voiceResults:', voiceResults);
     console.log('📋 voiceSurveyData:', voiceSurveyData);
     
     if (voiceResults && voiceSurveyData) {
+      // Persistir en Supabase antes de continuar
+      let saved = false;
+      try {
+        if (supabase) {
+          const { error } = await supabase
+            .from('surveys')
+            .insert([{ 
+              answers: voiceSurveyData, 
+              results: voiceResults,
+              source: 'voice',
+              transcript: transcript 
+            }]);
+          if (error) {
+            console.warn('⚠️ No se pudo guardar en Supabase:', error.message);
+          } else {
+            saved = true;
+            console.log('✅ Encuesta de voz guardada en Supabase');
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Error al usar Supabase:', e.message);
+      }
+
+      // Fallback al backend si no se guardó en Supabase
+      if (!saved) {
+        try {
+          const response = await fetch('/api/voice-results', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ 
+              ...voiceSurveyData, 
+              results: voiceResults,
+              source: 'voice',
+              transcript: transcript 
+            })
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            console.warn('⚠️ No se pudo guardar en backend:', data?.message);
+          } else {
+            console.log('✅ Encuesta de voz guardada (backend)');
+          }
+        } catch (err) {
+          console.warn('⚠️ Error de red al guardar en backend:', err.message);
+        }
+      }
+
       console.log('✅ Activando redirección...');
       setShouldRedirect(true);
     }

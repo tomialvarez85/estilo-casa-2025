@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-// const { MongoClient } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
@@ -12,34 +11,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// Configurar MongoDB Atlas (COMENTADO PARA DESARROLLO LOCAL)
-// const mongoUrl = process.env.MONGODB_URI;
-
-// if (!mongoUrl) {
-//   console.error('❌ Error: MONGODB_URI debe estar configurado en las variables de entorno');
-//   process.exit(1);
-// }
-
-// let db;
-
-// Conectar a MongoDB con configuración SSL (COMENTADO PARA DESARROLLO LOCAL)
-// async function connectToMongoDB() {
-//   try {
-//     const client = new MongoClient(mongoUrl, {
-//       ssl: true,
-//       sslValidate: false,
-//       retryWrites: true,
-//       w: 'majority'
-//     });
-    
-//     await client.connect();
-//     db = client.db('estilo-casa-2025');
-//     console.log('✅ Conectado a MongoDB Atlas');
-//   } catch (error) {
-//     console.error('❌ Error conectando a MongoDB:', error.message);
-//     process.exit(1);
-//   }
-// }
+// Eliminado soporte MongoDB: ahora el guardado se hace con Supabase desde el frontend
 
 // Ruta principal
 app.get('/', (req, res) => {
@@ -52,22 +24,9 @@ app.post('/api/survey', async (req, res) => {
     const surveyData = req.body;
     
     console.log('📊 Datos de encuesta recibidos:', surveyData);
-    
-    // Simular guardado en base de datos (COMENTADO PARA DESARROLLO LOCAL)
-    // const result = await db.collection('surveys').insertOne({
-    //   ...surveyData,
-    //   timestamp: new Date(),
-    //   source: 'web'
-    // });
-    
-    // console.log('✅ Encuesta guardada en MongoDB:', result.insertedId);
-    
-    // Simular respuesta exitosa
-    res.json({
-      success: true,
-      message: 'Encuesta guardada exitosamente (modo desarrollo)',
-      // surveyId: result.insertedId
-    });
+    // Ya no persistimos aquí. El frontend guarda en Supabase.
+    // Dejamos una respuesta 200 para compatibilidad si se usa el fallback.
+    res.json({ success: true, message: 'Recibido (no persistido en servidor)' });
     
   } catch (error) {
     console.error('❌ Error guardando encuesta:', error);
@@ -200,10 +159,6 @@ app.get('/api/db-info', async (req, res) => {
 // Iniciar servidor
 app.listen(PORT, async () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log('📱 Modo desarrollo activado - Base de datos simulada');
-  
-  // Conectar a MongoDB (COMENTADO PARA DESARROLLO LOCAL)
-  // await connectToMongoDB();
   
   console.log('✅ Servidor listo para recibir peticiones');
 });

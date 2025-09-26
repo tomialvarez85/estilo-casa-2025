@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { supabase } from '../supabaseClient';
 
 const Survey = ({ onComplete, onBack }) => {
   const [answers, setAnswers] = useState({});
@@ -78,7 +79,7 @@ const Survey = ({ onComplete, onBack }) => {
     };
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // Verificar que todas las preguntas estén respondidas
     const allAnswered = questions.every(q => answers[q.id]);
     
@@ -91,6 +92,46 @@ const Survey = ({ onComplete, onBack }) => {
     if (allAnswered) {
       console.log('🚀 Encuesta completa, generando resultados...');
       const results = calculateRecommendations(answers);
+
+      // Persistir preferentemente en Supabase (si está configurado)
+      let saved = false;
+      try {
+        if (supabase) {
+          const { error } = await supabase
+            .from('surveys')
+            .insert([{ answers, results }]);
+          if (error) {
+            console.warn('⚠️ No se pudo guardar en Supabase:', error.message);
+          } else {
+            saved = true;
+            console.log('✅ Encuesta guardada en Supabase');
+          }
+        }
+      } catch (e) {
+        console.warn('⚠️ Error al usar Supabase:', e.message);
+      }
+
+      // Fallback al backend existente si no se guardó en Supabase
+      if (!saved) {
+        try {
+          const response = await fetch('/api/survey', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ ...answers, results })
+          });
+          const data = await response.json();
+          if (!response.ok || !data.success) {
+            console.warn('⚠️ No se pudo guardar en backend:', data?.message);
+          } else {
+            console.log('✅ Encuesta guardada (backend). ID:', data.surveyId);
+          }
+        } catch (err) {
+          console.warn('⚠️ Error de red al guardar en backend:', err.message);
+        }
+      }
+
       onComplete(answers, results);
     } else {
       console.log('❌ Encuesta incompleta, faltan respuestas');
@@ -101,14 +142,15 @@ const Survey = ({ onComplete, onBack }) => {
   const totalQuestions = questions.length;
   const progress = (answeredCount / totalQuestions) * 100;
   const isMobile = window.innerWidth <= 768;
+  const isNotebook = window.innerWidth <= 1280 && window.innerWidth > 768;
 
   return (
     <div className="card compact-survey" style={{
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: isMobile ? '100px' : '25px',
-      maxWidth: isMobile ? '100%' : '1100px',
+      paddingBottom: isMobile ? '100px' : isNotebook ? '120px' : '25px',
+      maxWidth: isMobile ? '100%' : isNotebook ? '100%' : '1100px',
       margin: '0 auto',
       width: '100%',
       backgroundColor: isMobile ? 'transparent' : '#f8f9fa'
@@ -177,21 +219,21 @@ const Survey = ({ onComplete, onBack }) => {
         overflowY: isMobile ? 'auto' : 'visible',
         padding: isMobile 
           ? 'clamp(10px, 2vw, 30px)'
-          : '0 25px 20px 25px',
+          : isNotebook ? '15px' : '0 25px 20px 25px',
         display: 'grid',
-        gap: isMobile ? 'clamp(20px, 4vw, 40px)' : '15px',
-        gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+        gap: isMobile ? 'clamp(20px, 4vw, 40px)' : isNotebook ? '18px' : '15px',
+        gridTemplateColumns: isMobile ? '1fr' : isNotebook ? '1fr' : 'repeat(2, 1fr)',
         maxWidth: '100%',
         backgroundColor: isMobile ? 'transparent' : 'white',
         borderRadius: isMobile ? '0' : '0 0 15px 15px',
-        margin: isMobile ? '0' : '0 15px 15px 15px',
+        margin: isMobile ? '0' : isNotebook ? '0 10px 10px 10px' : '0 15px 15px 15px',
         boxShadow: isMobile ? 'none' : '0 3px 12px rgba(0, 0, 0, 0.1)'
       }}>
         {questions.map((question, index) => (
           <div key={question.id} className="compact-question-section" style={{
             backgroundColor: isMobile ? '#ffffff' : 'transparent',
             borderRadius: isMobile ? '15px' : '0',
-            padding: isMobile ? 'clamp(20px, 4vw, 30px)' : '0',
+            padding: isMobile ? 'clamp(20px, 4vw, 30px)' : isNotebook ? '16px' : '0',
             boxShadow: isMobile ? '0 4px 20px rgba(0, 0, 0, 0.1)' : 'none',
             border: isMobile ? '1px solid #e9ecef' : 'none',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
@@ -201,8 +243,8 @@ const Survey = ({ onComplete, onBack }) => {
             flexDirection: 'column',
             justifyContent: 'space-between',
             // En desktop, agregar borde inferior excepto para el último
-            borderBottom: !isMobile && index < questions.length - 2 ? '1px solid #f1f3f4' : 'none',
-            paddingBottom: !isMobile ? '15px' : 'clamp(20px, 4vw, 30px)'
+            borderBottom: !isMobile && !isNotebook && index < questions.length - 2 ? '1px solid #f1f3f4' : 'none',
+            paddingBottom: !isMobile ? (isNotebook ? '8px' : '15px') : 'clamp(20px, 4vw, 30px)'
           }}>
             <div className="compact-question-header" style={{
               marginBottom: isMobile ? 'clamp(15px, 3vw, 25px)' : '12px'
@@ -315,14 +357,14 @@ const Survey = ({ onComplete, onBack }) => {
       
       {/* Footer - Diseño diferente para móvil vs desktop */}
       <div className="survey-footer" style={{
-        position: isMobile ? 'sticky' : 'static',
+        position: isMobile ? 'sticky' : isNotebook ? 'sticky' : 'static',
         bottom: 0,
         backgroundColor: 'white',
-        padding: isMobile ? '10px 0' : '0',
-        borderTop: isMobile ? '2px solid #e9ecef' : 'none',
+        padding: isMobile ? '10px 0' : isNotebook ? '10px 0' : '0',
+        borderTop: isMobile ? '2px solid #e9ecef' : isNotebook ? '2px solid #e9ecef' : 'none',
         zIndex: 100,
         maxWidth: '100%',
-        margin: isMobile ? '0' : '0 15px 15px 15px'
+        margin: isMobile ? '0' : isNotebook ? '0' : '0 15px 15px 15px'
       }}>
         <div style={{
           display: 'flex',
