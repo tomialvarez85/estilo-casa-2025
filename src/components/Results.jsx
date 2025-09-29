@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../supabaseClient';
 
 const Results = ({ results, surveyData, onRestart }) => {
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -9,6 +10,18 @@ const Results = ({ results, surveyData, onRestart }) => {
   const [selectedVoice, setSelectedVoice] = useState(null);
   const [availableVoices, setAvailableVoices] = useState([]);
   const [showVoiceSelector, setShowVoiceSelector] = useState(false);
+  const [companies, setCompanies] = useState([]);
+  const [recommendedStands, setRecommendedStands] = useState([]);
+  const [alsoInteresting, setAlsoInteresting] = useState([]);
+  const alsoRef = useRef(null);
+  const showOnlyAlso = (() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('interesar') === '1';
+    } catch {
+      return false;
+    }
+  })();
 
   const sections = [
     {
@@ -91,6 +104,109 @@ const Results = ({ results, surveyData, onRestart }) => {
       initializeSpeechRecognition();
     }
   };
+
+  // Cargar empresas desde Supabase y calcular stands recomendados
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        if (!supabase) return;
+        const { data, error } = await supabase
+          .from('companies')
+          .select('name, activity, stand_number, sector');
+        if (error) {
+          console.warn('⚠️ No se pudieron cargar empresas:', error.message);
+          return;
+        }
+        setCompanies(data || []);
+      } catch (e) {
+        console.warn('⚠️ Error al cargar empresas:', e.message);
+      }
+    };
+    fetchCompanies();
+  }, []);
+
+  useEffect(() => {
+    if (!companies || companies.length === 0 || !surveyData) {
+      setRecommendedStands([]);
+      setAlsoInteresting([]);
+      return;
+    }
+
+    // Mapeo de palabras clave por respuesta
+    const keywordsByAnswer = {
+      categoria: {
+        muebles_decoracion: ['mueble', 'muebler', 'deco', 'decor', 'sillón', 'sillon', 'mesa', 'madera', 'textil', 'tapizado'],
+        aberturas_construccion: ['abertura', 'aluminio', 'puerta', 'ventana', 'revestimiento', 'ladrillo', 'pvc', 'galería', 'galeria', 'techo'],
+        interiorismo_integral: ['interiorismo', 'proyecto', 'cortinas', 'alfombra', 'integral', 'diseño de interiores']
+      },
+      estiloProyecto: {
+        estandar: ['listo para usar', 'colchón', 'colchon', 'somier', 'sommier', 'terminado', 'stock'],
+        personalizado: ['a medida', 'personalizado', 'amoblamiento', 'carpintería', 'carpinteria'],
+        artesanal: ['artesanal', 'sustentable', 'rústico', 'rustico', 'bioconstrucción', 'bioconstruccion', 'tornería', 'torneria']
+      },
+      espacio: {
+        living_dormitorio: ['living', 'dormitorio', 'sillón', 'sillon', 'racks', 'bancos', 'textil'],
+        cocina_comedor: ['cocina', 'comedor', 'amoblamientos de cocina', 'campana', 'anafe', 'horno', 'vajilla', 'mesa'],
+        accesos_aberturas_exterior: ['acceso', 'abertura', 'exterior', 'galería', 'galeria', 'puerta', 'cerradura']
+      },
+      inversion: {
+        economico: ['económico', 'economico', 'minorista'],
+        medio: ['estándar', 'estandar', 'medio'],
+        premium: ['alta gama', 'premium', 'acero quirúrgico']
+      }
+    };
+
+    const normalized = (s) => (s || '').toString().toLowerCase();
+
+    const scoreCompany = (company) => {
+      const text = normalized(company.activity + ' ' + company.name);
+      let score = 0;
+
+      // Puntuar por cada dimensión respondida
+      Object.entries(keywordsByAnswer).forEach(([questionId, options]) => {
+        const answer = surveyData[questionId];
+        if (!answer) return;
+        const kw = options[answer] || [];
+        kw.forEach(k => {
+          if (text.includes(k)) score += 2; // peso por keyword
+        });
+      });
+
+      // Leve sesgo por pabellones comunes de resultados calculados
+      if (results && results.topAreas) {
+        const areaBoost = results.topAreas.reduce((acc, a, idx) => acc + (3 - idx), 0);
+        score += Math.min(areaBoost, 3);
+      }
+
+      return score;
+    };
+
+    const ranked = companies
+      .map(c => ({ ...c, score: scoreCompany(c) }))
+      .filter(c => c.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 8); // top 8 stands
+
+    setRecommendedStands(ranked);
+
+    // Te podría interesar: stands excluidos por el filtro, pero afines a lifestyle/servicios
+    const recommendedKeys = new Set(ranked.map(r => `${r.name}|${r.stand_number}`));
+    const lifestyleKeywords = [
+      'purificador', 'agua', 'vela', 'fragancia', 'aroma', 'difusor',
+      'colchón', 'colchon', 'sommier', 'somier', 'textil', 'iluminación', 'iluminacion'
+    ];
+    const maybeInteresting = companies
+      .filter(c => !recommendedKeys.has(`${c.name}|${c.stand_number}`))
+      .map(c => {
+        const text = (c.activity + ' ' + c.name).toLowerCase();
+        const hits = lifestyleKeywords.reduce((acc, kw) => acc + (text.includes(kw) ? 1 : 0), 0);
+        return { ...c, hits };
+      })
+      .filter(c => c.hits > 0)
+      .sort((a, b) => b.hits - a.hits)
+      .slice(0, 6);
+    setAlsoInteresting(maybeInteresting);
+  }, [companies, surveyData, results]);
 
   // Función para inicializar el reconocimiento de voz
   const initializeSpeechRecognition = () => {
@@ -945,6 +1061,7 @@ const Results = ({ results, surveyData, onRestart }) => {
         margin: '0 auto',
         padding: '20px'
       }}>
+        {!showOnlyAlso && (
         <h1 style={{
           fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
           textAlign: 'center',
@@ -953,164 +1070,100 @@ const Results = ({ results, surveyData, onRestart }) => {
           fontWeight: '700',
           lineHeight: '1.2'
         }}>
-          🎯 Áreas Recomendadas para Visitar
+          🧭 Stands recomendados para visitar
         </h1>
-        
-        <div className="recommendations">
-          {/* Mostrar solo pabellones únicos */}
-          {(() => {
-            const uniqueAreas = results.topAreas.filter((area, index, self) => 
-              index === self.findIndex(a => getAreaName(a.area) === getAreaName(area.area))
-            );
-            
-            return uniqueAreas.map((area, index) => (
-              <div key={area.area} className="recommendation-item" style={{
-                marginBottom: '20px'
-              }}>
-                <div className="area-card" style={{
-                  backgroundColor: 'white',
-                  borderRadius: '15px',
-                  padding: '20px',
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '15px',
-                  flexWrap: 'wrap'
-                }}>
-                  <div className="area-icon" style={{
-                    fontSize: 'clamp(2rem, 6vw, 3rem)',
-                    flexShrink: '0'
-                  }}>{getAreaIcon(area.area)}</div>
-                  <div className="area-content" style={{
-                    flex: '1',
-                    minWidth: '250px'
-                  }}>
-                    <h3 className="area-title" style={{
-                      fontSize: 'clamp(1rem, 3vw, 1.3rem)',
-                      marginBottom: '10px',
-                      wordWrap: 'break-word'
-                    }}>
-                      {index + 1}. {getAreaName(area.area)}
-                    </h3>
-                    <p className="area-description" style={{
-                      fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                      lineHeight: '1.4',
-                      marginBottom: '10px'
-                    }}>
-                      {getAreaDescription(area.area)}
-                    </p>
-                    <div className="area-score" style={{
-                      fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
-                      fontWeight: 'bold',
-                      color: '#2196F3'
-                    }}>
-                      Puntuación: {area.score} puntos
+        )}
+
+        {/* Sugerencias de Stands (basado en respuestas) */}
+        {!showOnlyAlso && (
+        <div className="card" style={{ marginTop: '20px' }}>
+          {recommendedStands.length === 0 ? (
+            <p style={{ textAlign: 'center', color: '#666' }}>
+              No encontramos coincidencias directas. Te sugerimos empezar por las áreas destacadas arriba.
+            </p>
+          ) : (
+            <div className="recommendations" style={{ marginTop: 10 }}>
+              {recommendedStands.map((c, idx) => (
+                <div key={c.name + c.stand_number} className="recommendation-item" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 24 }}>📍</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="recommendation-title">
+                      {idx + 1}. {c.name}
+                    </div>
+                    <div className="recommendation-description">
+                      {c.activity}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                      {c.sector && (
+                        <span style={{ fontWeight: 600, color: '#2c3e50' }}>Sector: {c.sector}</span>
+                      )}
+                      <span style={{ fontWeight: 600, color: '#667eea' }}>Stand: {c.stand_number}</span>
                     </div>
                   </div>
                 </div>
-              </div>
-            ));
-          })()}
+              ))}
+            </div>
+          )}
         </div>
+        )}
 
-        <div className="voice-controls" style={{
-          textAlign: 'center',
-          margin: '30px 0'
-        }}>
-          <button 
-            className={`btn ${isSpeaking ? 'speaking' : ''}`}
-            onClick={isSpeaking ? stopSpeaking : speakRecommendations}
-            style={{
-              backgroundColor: isSpeaking ? '#ff6b6b' : '#4CAF50',
-              margin: '10px',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'white',
-              boxShadow: '0 4px 8px rgba(76, 175, 80, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(76, 175, 80, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(76, 175, 80, 0.3)';
-            }}
-          >
-            {isSpeaking ? '🔇 Detener Audio' : '🔊 Escuchar Recomendaciones'}
-          </button>
-          
-          <button 
-            className="btn"
-            onClick={displayVoiceSelector}
-            style={{
-              backgroundColor: '#9C27B0',
-              margin: '10px',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'white',
-              boxShadow: '0 4px 8px rgba(156, 39, 176, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(156, 39, 176, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(156, 39, 176, 0.3)';
-            }}
-          >
-            🎤 Ver Voces Disponibles
-          </button>
-        </div>
+        {/* Botón para ir a "Te podría interesar" */}
+        {alsoInteresting.length > 0 && (
+          <div style={{ textAlign: 'center', marginTop: 10 }}>
+            <button
+              className="btn"
+              onClick={() => alsoRef.current && alsoRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            >
+              🔎 Ver "Te podría interesar"
+            </button>
+          </div>
+        )}
 
-        <div className="restart-section" style={{
-          textAlign: 'center',
-          margin: '30px 0'
-        }}>
-          <button 
-            className="btn restart-btn"
-            onClick={showTePodriaInteresarSection}
-            style={{
-              backgroundColor: '#2196F3',
-              color: 'white',
-              margin: '10px',
-              padding: 'clamp(12px, 3vw, 15px) clamp(25px, 5vw, 30px)',
-              fontSize: 'clamp(0.9rem, 2.5vw, 16px)',
-              fontWeight: 'bold',
-              borderRadius: '25px',
-              border: 'none',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(33, 150, 243, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap'
-            }}
-            onMouseOver={(e) => {
-              e.target.style.backgroundColor = '#1976D2';
-              e.target.style.transform = 'translateY(-2px)';
-              e.target.style.boxShadow = '0 6px 12px rgba(33, 150, 243, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.backgroundColor = '#2196F3';
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.boxShadow = '0 4px 8px rgba(33, 150, 243, 0.3)';
-            }}
+        {/* Te podría interesar (stands no seleccionados por el filtro principal) */}
+        {alsoInteresting.length > 0 && (
+          <section
+            ref={alsoRef}
+            role="region"
+            aria-label="Te podría interesar"
+            style={{ marginTop: 30, paddingTop: 20, borderTop: '2px solid #e9ecef' }}
           >
-            🔍 Te podría interesar
-          </button>
-        </div>
+          <div className="card" style={{ marginTop: '10px', background: '#fafbff' }}>
+            <h2 style={{
+              fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)',
+              textAlign: 'center',
+              marginBottom: '15px',
+              color: '#2c3e50'
+            }}>
+              🔍 Te podría interesar
+            </h2>
+            <div className="recommendations" style={{ marginTop: 10 }}>
+              {alsoInteresting.map((c, idx) => (
+                <div key={`also-${c.name}-${c.stand_number}`} className="recommendation-item" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                  <div style={{ fontSize: 22 }}>⭐</div>
+                  <div style={{ flex: 1 }}>
+                    <div className="recommendation-title">
+                      {idx + 1}. {c.name}
+                    </div>
+                    <div className="recommendation-description">
+                      {c.activity}
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                      {c.sector && (
+                        <span style={{ fontWeight: 600, color: '#2c3e50' }}>Sector: {c.sector}</span>
+                      )}
+                      <span style={{ fontWeight: 600, color: '#667eea' }}>Stand: {c.stand_number}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          </section>
+        )}
+
+        {/* Controles de voz eliminados para dejar solo stands recomendados */}
+
+        {/* Sección "Te podría interesar" eliminada */}
       </div>
     </div>
   );

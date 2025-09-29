@@ -6,40 +6,39 @@ const Survey = ({ onComplete, onBack }) => {
 
   const questions = [
     {
-      id: 'tipoVivienda',
-      title: '¿Qué tipo de vivienda tienes o planeas equipar?',
+      id: 'categoria',
+      title: 'Pregunta 1: ¿Qué categoría principal te interesa recorrer?',
       options: [
-        { value: 'casa', label: 'Casa', icon: '🏠' },
-        { value: 'apartamento', label: 'Apartamento', icon: '🏢' },
-        { value: 'duplex', label: 'Dúplex', icon: '🏘️' }
+        { value: 'muebles_decoracion', label: '🛋️ Muebles y decoración' },
+        { value: 'aberturas_construccion', label: '🪟 Aberturas y construcción' },
+        { value: 'interiorismo_integral', label: '🏡 Interiorismo y proyectos integrales' }
       ]
     },
     {
-      id: 'estilo',
-      title: '¿Qué estilo de decoración prefieres?',
+      id: 'estiloProyecto',
+      title: 'Pregunta 2: ¿Qué estilo preferís para tu proyecto?',
       options: [
-        { value: 'moderno', label: 'Moderno', icon: '✨' },
-        { value: 'clasico', label: 'Clásico', icon: '👑' },
-        { value: 'minimalista', label: 'Minimalista', icon: '⚪' },
-        { value: 'rustico', label: 'Rústico', icon: '🌾' }
+        { value: 'estandar', label: '✨ Estándar / listo para usar' },
+        { value: 'personalizado', label: '🎨 Personalizado / a medida' },
+        { value: 'artesanal', label: '🌿 Artesanal / sustentable' }
       ]
     },
     {
-      id: 'presupuesto',
-      title: '¿Cuál es tu rango de presupuesto para el equipamiento?',
+      id: 'espacio',
+      title: 'Pregunta 3: ¿En qué espacio pensás aplicar lo que buscás?',
       options: [
-        { value: 'alto', label: 'Alto (Premium)', icon: '💎' },
-        { value: 'medio', label: 'Medio (Estandar)', icon: '💰' },
-        { value: 'bajo', label: 'Económico', icon: '💡' }
+        { value: 'living_dormitorio', label: '🛋️ Living / Dormitorio' },
+        { value: 'cocina_comedor', label: '🍽️ Cocina / Comedor' },
+        { value: 'accesos_aberturas_exterior', label: '🚪 Accesos / Aberturas / Exterior' }
       ]
     },
     {
-      id: 'prioridad',
-      title: '¿Qué es más importante para ti en el equipamiento?',
+      id: 'inversion',
+      title: 'Pregunta 4: ¿Qué rango de inversión pensás destinar?',
       options: [
-        { value: 'funcionalidad', label: 'Funcionalidad', icon: '⚙️' },
-        { value: 'estetica', label: 'Estética', icon: '🎨' },
-        { value: 'espacio', label: 'Optimización de espacio', icon: '📐' }
+        { value: 'economico', label: '💸 Económico' },
+        { value: 'medio', label: '💳 Medio' },
+        { value: 'premium', label: '🏆 Premium' }
       ]
     }
   ];
