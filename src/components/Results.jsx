@@ -619,41 +619,7 @@ const Results = ({ results, surveyData, onRestart }) => {
     console.log('🔇 Audio detenido');
   };
 
-  // Leer automáticamente cuando se muestren los resultados
-  useEffect(() => {
-    // Solo reproducir audio si estamos en la sección de recomendaciones
-    if (!showTePodriaInteresar && !showVoiceInput) {
-      // Función para cargar voces y reproducir audio
-      const loadVoicesAndSpeak = () => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          console.log('🎤 Voces cargadas:', voices.map(v => `${v.name} (${v.lang})`));
-          
-          // Reproducir audio inmediatamente
-          speakRecommendations();
-        } else {
-          // Si las voces no están disponibles, esperar un poco más
-          setTimeout(loadVoicesAndSpeak, 100);
-        }
-      };
-
-      // Intentar cargar voces inmediatamente
-      loadVoicesAndSpeak();
-
-      // Intentar múltiples veces para asegurar que las voces estén cargadas
-      const timers = [
-        setTimeout(() => loadVoicesAndSpeak(), 200),
-        setTimeout(() => loadVoicesAndSpeak(), 500),
-        setTimeout(() => loadVoicesAndSpeak(), 1000),
-        setTimeout(() => loadVoicesAndSpeak(), 2000)
-      ];
-
-      return () => {
-        timers.forEach(timer => clearTimeout(timer));
-        stopSpeaking();
-      };
-    }
-  }, [showTePodriaInteresar, showVoiceInput]);
+  // Autoplay de voz deshabilitado al mostrar resultados
 
   const getAreaName = (area) => {
     const areaNames = {
@@ -1160,6 +1126,17 @@ const Results = ({ results, surveyData, onRestart }) => {
           </div>
           </section>
         )}
+
+        {/* Botón volver al inicio */}
+        <div style={{ textAlign: 'center', marginTop: 20 }}>
+          <button
+            className="btn"
+            onClick={onRestart}
+            style={{ backgroundColor: '#ff9800' }}
+          >
+            🏠 Volver al inicio
+          </button>
+        </div>
 
         {/* Controles de voz eliminados para dejar solo stands recomendados */}
 
