@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Survey from './components/Survey';
 import Results from './components/Results';
 import VoiceRecognition from './components/VoiceRecognition';
@@ -8,6 +8,41 @@ function App() {
   const [surveyData, setSurveyData] = useState({});
   const [results, setResults] = useState(null);
   const [showVoiceOption, setShowVoiceOption] = useState(false);
+
+  // Mensaje de bienvenida con voz de mujer
+  useEffect(() => {
+    const speakWelcome = () => {
+      if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance('Bienvenidos a la Expo Estilo Casa 2025');
+        
+        // Configurar voz de mujer
+        const voices = speechSynthesis.getVoices();
+        const femaleVoice = voices.find(voice => 
+          voice.lang.startsWith('es') && 
+          (voice.name.includes('Female') || 
+           voice.name.includes('Mujer') || 
+           voice.name.includes('Woman') ||
+           voice.gender === 'female')
+        );
+        
+        if (femaleVoice) {
+          utterance.voice = femaleVoice;
+        }
+        
+        // Configurar propiedades de la voz
+        utterance.rate = 0.6; // Velocidad más lenta
+        utterance.pitch = 1.1; // Tono ligeramente más alto
+        utterance.volume = 1.0; // Volumen completo
+        
+        speechSynthesis.speak(utterance);
+      }
+    };
+
+    // Reproducir mensaje después de un pequeño delay para asegurar que la página esté cargada
+    const timer = setTimeout(speakWelcome, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSurveyComplete = (data, surveyResults) => {
     setSurveyData(data);
@@ -96,7 +131,7 @@ function App() {
               maxWidth: '800px',
               margin: '0 auto 40px auto'
             }}>
-              Descubre los stands acorde a tus necesidades. 
+              Descubre stands acorde a tus necesidades. 
               Te ayudaremos a encontrar exactamente lo que buscas en nuestro evento.
             </p>
 
