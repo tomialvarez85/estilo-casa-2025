@@ -393,113 +393,61 @@ const Survey = ({ onComplete, onBack }) => {
           transform: showFooter ? 'translateY(0)' : 'translateY(20px)',
           transition: 'opacity 0.3s ease, transform 0.3s ease'
         }}>
+        <p style={{
+          color: '#666',
+          fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+          margin: '0 0 15px 0',
+          lineHeight: '1.4',
+          textAlign: 'center'
+        }}>
+          💡 Completa todas las preguntas para obtener recomendaciones personalizadas
+        </p>
         <div style={{
           display: 'flex',
-          gap: 'clamp(10px, 3vw, 20px)',
+          gap: '15px',
           justifyContent: 'center',
-          flexWrap: 'wrap',
-          padding: isMobile ? 'clamp(15px, 3vw, 25px)' : '20px',
-          backgroundColor: isMobile ? '#f8f9fa' : '#4CAF50',
-          borderRadius: isMobile ? '15px' : '15px',
-          border: isMobile ? '2px solid #e9ecef' : 'none',
-          margin: isMobile ? '0 clamp(10px, 2vw, 20px)' : '0',
-          maxWidth: isMobile ? '600px' : '100%',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-          boxShadow: isMobile ? 'none' : '0 4px 15px rgba(76, 175, 80, 0.3)'
+          flexWrap: 'wrap'
         }}>
           <button 
-            className="btn" 
             onClick={onBack}
             style={{
               backgroundColor: '#6c757d',
               color: 'white',
               border: 'none',
-              padding: isMobile 
-                ? 'clamp(15px, 4vw, 20px) clamp(25px, 5vw, 35px)' 
-                : '15px 25px',
-              fontSize: isMobile ? 'clamp(0.9rem, 3vw, 1.1rem)' : '0.9rem',
-              fontWeight: 'bold',
-              borderRadius: isMobile ? '25px' : '18px',
+              padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 25px)',
+              borderRadius: '25px',
+              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
               cursor: 'pointer',
-              boxShadow: '0 4px 15px rgba(108, 117, 125, 0.3)',
-              transition: 'all 0.3s ease',
-              whiteSpace: 'nowrap',
-              minHeight: isMobile ? '50px' : '45px',
-              minWidth: isMobile ? '150px' : '140px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              lineHeight: '1.2',
-              zIndex: 10,
-              position: 'relative',
-              maxWidth: isMobile ? '200px' : '160px',
-              width: '100%'
+              transition: 'background-color 0.3s ease',
+              whiteSpace: 'nowrap'
             }}
-            onMouseOver={(e) => {
-              e.target.style.transform = isMobile ? 'translateY(-2px)' : 'translateY(-1px)';
-              e.target.style.backgroundColor = '#5a6268';
-              e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = 'translateY(0)';
-              e.target.style.backgroundColor = '#6c757d';
-              e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
-            }}
+            onMouseOver={(e) => e.target.style.backgroundColor = '#5a6268'}
+            onMouseOut={(e) => e.target.style.backgroundColor = '#6c757d'}
           >
             ← Volver
           </button>
           <button 
-            className="btn" 
             onClick={handleSubmit}
             style={{
-              backgroundColor: answeredCount < totalQuestions 
-                ? (isMobile ? '#ccc' : '#ffffff') 
-                : (isMobile ? '#4CAF50' : '#ffffff'),
-              color: answeredCount < totalQuestions 
-                ? (isMobile ? 'white' : '#666') 
-                : (isMobile ? 'white' : '#4CAF50'),
-              border: isMobile ? 'none' : `2px solid ${answeredCount < totalQuestions ? '#ccc' : '#ffffff'}`,
-              padding: isMobile 
-                ? 'clamp(15px, 4vw, 20px) clamp(30px, 6vw, 40px)' 
-                : '15px 30px',
-              fontSize: isMobile ? 'clamp(1rem, 3vw, 1.2rem)' : '1rem',
-              fontWeight: 'bold',
-              borderRadius: isMobile ? '25px' : '18px',
-              cursor: answeredCount < totalQuestions ? 'not-allowed' : 'pointer',
-              boxShadow: isMobile 
-                ? '0 4px 8px rgba(76, 175, 80, 0.3)' 
-                : '0 4px 12px rgba(0, 0, 0, 0.15)',
-              transition: 'all 0.3s ease',
+              backgroundColor: answeredCount < totalQuestions ? '#95a5a6' : '#ff9800',
+              color: 'white',
+              border: 'none',
+              padding: 'clamp(10px, 2.5vw, 12px) clamp(20px, 4vw, 25px)',
+              borderRadius: '25px',
+              fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
+              cursor: answeredCount >= totalQuestions ? 'pointer' : 'not-allowed',
+              transition: 'background-color 0.3s ease',
               whiteSpace: 'nowrap',
-              opacity: 1,
-              minHeight: isMobile ? '50px' : '45px',
-              minWidth: isMobile ? '200px' : '180px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              lineHeight: '1.2',
-              zIndex: 10,
-              position: 'relative',
-              maxWidth: isMobile ? '400px' : '220px',
-              width: '100%'
+              opacity: answeredCount < totalQuestions ? 0.6 : 1
             }}
             onMouseOver={(e) => {
               if (answeredCount >= totalQuestions) {
-                e.target.style.transform = isMobile ? 'translateY(-2px)' : 'translateY(-1px)';
-                e.target.style.boxShadow = isMobile 
-                  ? '0 6px 12px rgba(76, 175, 80, 0.4)' 
-                  : '0 6px 18px rgba(0, 0, 0, 0.2)';
+                e.target.style.backgroundColor = '#f57c00';
               }
             }}
             onMouseOut={(e) => {
               if (answeredCount >= totalQuestions) {
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = isMobile 
-                  ? '0 4px 8px rgba(76, 175, 80, 0.3)' 
-                  : '0 4px 12px rgba(0, 0, 0, 0.15)';
+                e.target.style.backgroundColor = '#ff9800';
               }
             }}
           >
