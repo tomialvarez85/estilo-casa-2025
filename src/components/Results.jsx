@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 const Results = ({ results, surveyData, onRestart }) => {
+  const navigate = useNavigate();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  
+  // Debug logs
+  console.log('🔍 Results component recibió:');
+  console.log('- results:', results);
+  console.log('- surveyData:', surveyData);
   const [showTePodriaInteresar, setShowTePodriaInteresar] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
@@ -1029,12 +1036,13 @@ const Results = ({ results, surveyData, onRestart }) => {
       }}>
         {!showOnlyAlso && (
         <h1 style={{
-          fontSize: 'clamp(1.8rem, 4vw, 2.5rem)',
+          fontSize: 'clamp(1.5rem, 4vw, 2.5rem)',
           textAlign: 'center',
-          marginBottom: 'clamp(20px, 4vw, 40px)',
+          marginBottom: 'clamp(15px, 4vw, 30px)',
           color: '#2c3e50',
           fontWeight: '700',
-          lineHeight: '1.2'
+          lineHeight: '1.2',
+          padding: window.innerWidth <= 768 ? '0 15px' : '0'
         }}>
           🧭 Stands recomendados para visitar
         </h1>
@@ -1050,20 +1058,66 @@ const Results = ({ results, surveyData, onRestart }) => {
           ) : (
             <div className="recommendations" style={{ marginTop: 10 }}>
               {recommendedStands.map((c, idx) => (
-                <div key={c.name + c.stand_number} className="recommendation-item" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 24 }}>📍</div>
-                  <div style={{ flex: 1 }}>
-                    <div className="recommendation-title">
+                <div 
+                  key={c.name + c.stand_number} 
+                  className="recommendation-item" 
+                  style={{ 
+                    display: 'flex', 
+                    gap: window.innerWidth <= 768 ? 8 : 12, 
+                    alignItems: 'flex-start',
+                    padding: window.innerWidth <= 768 ? '12px' : '15px',
+                    marginBottom: window.innerWidth <= 768 ? '10px' : '15px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: window.innerWidth <= 768 ? '8px' : '12px',
+                    border: '1px solid #e9ecef'
+                  }}
+                >
+                  <div style={{ 
+                    fontSize: window.innerWidth <= 768 ? 20 : 24,
+                    flexShrink: 0
+                  }}>📍</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="recommendation-title" style={{
+                      fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
+                      fontWeight: '600',
+                      marginBottom: '4px',
+                      wordBreak: 'break-word'
+                    }}>
                       {idx + 1}. {c.name}
                     </div>
-                    <div className="recommendation-description">
+                    <div className="recommendation-description" style={{
+                      fontSize: window.innerWidth <= 768 ? '0.8rem' : '0.9rem',
+                      color: '#666',
+                      marginBottom: '8px',
+                      lineHeight: '1.4',
+                      wordBreak: 'break-word'
+                    }}>
                       {c.activity}
                     </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: window.innerWidth <= 768 ? 6 : 12, 
+                      marginTop: 6 
+                    }}>
                       {c.sector && (
-                        <span style={{ fontWeight: 600, color: '#2c3e50' }}>Sector: {c.sector}</span>
+                        <span style={{ 
+                          fontWeight: 600, 
+                          color: '#2c3e50',
+                          fontSize: window.innerWidth <= 768 ? '0.75rem' : '0.85rem',
+                          backgroundColor: '#e3f2fd',
+                          padding: '2px 6px',
+                          borderRadius: '4px'
+                        }}>Sector: {c.sector}</span>
                       )}
-                      <span style={{ fontWeight: 600, color: '#667eea' }}>Stand: {c.stand_number}</span>
+                      <span style={{ 
+                        fontWeight: 600, 
+                        color: '#667eea',
+                        fontSize: window.innerWidth <= 768 ? '0.75rem' : '0.85rem',
+                        backgroundColor: '#f3e5f5',
+                        padding: '2px 6px',
+                        borderRadius: '4px'
+                      }}>Stand: {c.stand_number}</span>
                     </div>
                   </div>
                 </div>
@@ -1073,70 +1127,70 @@ const Results = ({ results, surveyData, onRestart }) => {
         </div>
         )}
 
-        {/* Botón para ir a "Te podría interesar" */}
+        {/* Botón para ir a "Te podría interesar" (navegación a ruta aparte) */}
         {alsoInteresting.length > 0 && (
-          <div style={{ textAlign: 'center', marginTop: 10 }}>
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: window.innerWidth <= 768 ? '20px' : '30px',
+            padding: window.innerWidth <= 768 ? '0 15px' : '0'
+          }}>
             <button
               className="btn"
-              onClick={() => alsoRef.current && alsoRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              onClick={() => navigate('/interesar', { 
+                state: { 
+                  recommendedStands: recommendedStands,
+                  alsoInteresting: alsoInteresting 
+                } 
+              })}
+              style={{
+                fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
+                padding: window.innerWidth <= 768 ? '12px 20px' : '15px 30px',
+                borderRadius: window.innerWidth <= 768 ? '25px' : '30px',
+                minWidth: window.innerWidth <= 768 ? '200px' : '250px'
+              }}
             >
               🔎 Ver "Te podría interesar"
             </button>
           </div>
         )}
 
-        {/* Te podría interesar (stands no seleccionados por el filtro principal) */}
-        {alsoInteresting.length > 0 && (
-          <section
-            ref={alsoRef}
-            role="region"
-            aria-label="Te podría interesar"
-            style={{ marginTop: 30, paddingTop: 20, borderTop: '2px solid #e9ecef' }}
-          >
-          <div className="card" style={{ marginTop: '10px', background: '#fafbff' }}>
-            <h2 style={{
-              fontSize: 'clamp(1.2rem, 2.5vw, 1.6rem)',
-              textAlign: 'center',
-              marginBottom: '15px',
-              color: '#2c3e50'
-            }}>
-              🔍 Te podría interesar
-            </h2>
-            <div className="recommendations" style={{ marginTop: 10 }}>
-              {alsoInteresting.map((c, idx) => (
-                <div key={`also-${c.name}-${c.stand_number}`} className="recommendation-item" style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                  <div style={{ fontSize: 22 }}>⭐</div>
-                  <div style={{ flex: 1 }}>
-                    <div className="recommendation-title">
-                      {idx + 1}. {c.name}
-                    </div>
-                    <div className="recommendation-description">
-                      {c.activity}
-                    </div>
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 6 }}>
-                      {c.sector && (
-                        <span style={{ fontWeight: 600, color: '#2c3e50' }}>Sector: {c.sector}</span>
-                      )}
-                      <span style={{ fontWeight: 600, color: '#667eea' }}>Stand: {c.stand_number}</span>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          </section>
-        )}
-
-        {/* Botón volver al inicio */}
-        <div style={{ textAlign: 'center', marginTop: 20 }}>
+        {/* Botón Volver */}
+        <div style={{ 
+          textAlign: 'center', 
+          marginTop: window.innerWidth <= 768 ? '20px' : '30px',
+          padding: window.innerWidth <= 768 ? '0 15px' : '0'
+        }}>
           <button
             className="btn"
             onClick={onRestart}
-            style={{ backgroundColor: '#ff9800' }}
+            style={{
+              backgroundColor: '#6c757d',
+              fontSize: window.innerWidth <= 768 ? '0.9rem' : '1rem',
+              padding: window.innerWidth <= 768 ? '12px 20px' : '15px 30px',
+              borderRadius: window.innerWidth <= 768 ? '25px' : '30px',
+              minWidth: window.innerWidth <= 768 ? '150px' : '180px',
+              color: 'white',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 4px 15px rgba(108, 117, 125, 0.3)'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.backgroundColor = '#5a6268';
+              e.target.style.transform = 'translateY(-2px)';
+              e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.backgroundColor = '#6c757d';
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
+            }}
           >
-            🏠 Volver al inicio
+            ← Volver
           </button>
         </div>
+
+
 
         {/* Controles de voz eliminados para dejar solo stands recomendados */}
 

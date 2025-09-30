@@ -382,6 +382,48 @@ const Survey = ({ onComplete, onBack }) => {
         }}>
           <button 
             className="btn" 
+            onClick={onBack}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              border: 'none',
+              padding: isMobile 
+                ? 'clamp(15px, 4vw, 20px) clamp(25px, 5vw, 35px)' 
+                : '15px 25px',
+              fontSize: isMobile ? 'clamp(0.9rem, 3vw, 1.1rem)' : '0.9rem',
+              fontWeight: 'bold',
+              borderRadius: isMobile ? '25px' : '18px',
+              cursor: 'pointer',
+              boxShadow: '0 4px 15px rgba(108, 117, 125, 0.3)',
+              transition: 'all 0.3s ease',
+              whiteSpace: 'nowrap',
+              minHeight: isMobile ? '50px' : '45px',
+              minWidth: isMobile ? '150px' : '140px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              textAlign: 'center',
+              lineHeight: '1.2',
+              zIndex: 10,
+              position: 'relative',
+              maxWidth: isMobile ? '200px' : '160px',
+              width: '100%'
+            }}
+            onMouseOver={(e) => {
+              e.target.style.transform = isMobile ? 'translateY(-2px)' : 'translateY(-1px)';
+              e.target.style.backgroundColor = '#5a6268';
+              e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
+            }}
+            onMouseOut={(e) => {
+              e.target.style.transform = 'translateY(0)';
+              e.target.style.backgroundColor = '#6c757d';
+              e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
+            }}
+          >
+            ← Volver
+          </button>
+          <button 
+            className="btn" 
             onClick={handleSubmit}
             style={{
               backgroundColor: answeredCount < totalQuestions 

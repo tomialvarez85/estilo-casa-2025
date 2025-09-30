@@ -8,16 +8,6 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [voiceResults, setVoiceResults] = useState(null);
   const [voiceSurveyData, setVoiceSurveyData] = useState(null);
-  const [shouldRedirect, setShouldRedirect] = useState(false);
-
-  // Efecto para manejar la redirección
-  useEffect(() => {
-    if (shouldRedirect && voiceResults && voiceSurveyData) {
-      console.log('🔄 Efecto de redirección activado');
-      onComplete(voiceResults, voiceSurveyData);
-      setShouldRedirect(false);
-    }
-  }, [shouldRedirect, voiceResults, voiceSurveyData, onComplete]);
 
   // Función para continuar a los resultados
   const handleContinue = async () => {
@@ -75,8 +65,8 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
         }
       }
 
-      console.log('✅ Activando redirección...');
-      setShouldRedirect(true);
+      console.log('✅ Llamando a onComplete directamente...');
+      onComplete(voiceResults, voiceSurveyData);
     }
   };
 
@@ -127,25 +117,67 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
   };
 
   // Función para analizar el texto de voz y generar recomendaciones
-  const analyzeVoiceInput = (text) => {
+  const analyzeVoiceInput = async (text) => {
     console.log('🎯 Analizando texto de voz:', text);
     
-    // Siempre mostrar los 3 pabellones principales independientemente del texto
-    const topAreas = [
-      { area: 'cocina', score: 3 },
-      { area: 'living', score: 2 },
-      { area: 'dormitorio', score: 1 }
-    ];
+    const lowerText = text.toLowerCase();
     
-    // Crear puntuaciones para todas las áreas (para compatibilidad)
-    const scores = {
-      cocina: 3,
-      living: 2,
-      dormitorio: 1,
-      bano: 0,
-      oficina: 0,
-      exterior: 0
+    // Palabras clave más específicas para cada área
+    const keywords = {
+      cocina: [
+        'cocina', 'electrodomésticos', 'hornos', 'heladeras', 'microondas', 'cocinar', 'comida', 
+        'utensilios', 'vajilla', 'cubiertos', 'platos', 'ollas', 'sartenes', 'horno', 'heladera',
+        'cafetera', 'tostadora', 'licuadora', 'procesadora', 'cocina', 'mesada', 'bajo mesada'
+      ],
+      living: [
+        'living', 'comedor', 'sala', 'sofá', 'mesa', 'sillas', 'decoración', 'muebles',
+        'sillón', 'sillon', 'mesa de centro', 'rack', 'tv', 'televisión', 'entretenimiento',
+        'relax', 'descanso', 'social', 'reuniones', 'familia'
+      ],
+      dormitorio: [
+        'dormitorio', 'cama', 'colchón', 'colchon', 'sommier', 'somier', 'ropa de cama',
+        'armario', 'ropero', 'descanso', 'dormir', 'almohadas', 'sábanas', 'cubrecamas',
+        'noche', 'descanso', 'relax', 'sueño'
+      ],
+      bano: [
+        'baño', 'bano', 'sanitarios', 'ducha', 'grifería', 'griferia', 'toilet', 'lavatorio',
+        'accesorios', 'toallas', 'espejos', 'mampara', 'bañera', 'bañadera', 'higiene'
+      ],
+      oficina: [
+        'oficina', 'escritorio', 'silla', 'computadora', 'trabajo', 'estudio', 'muebles de oficina',
+        'silla ergonómica', 'silla ergonomica', 'escritorio', 'estantería', 'estanteria',
+        'archivo', 'organización', 'organizacion', 'productividad'
+      ],
+      exterior: [
+        'jardín', 'jardin', 'exterior', 'terraza', 'balcón', 'balcon', 'muebles de jardín',
+        'plantas', 'decoración exterior', 'decoracion exterior', 'parrilla', 'asador',
+        'piscina', 'piletas', 'outdoor', 'aire libre'
+      ]
     };
+    
+    // Calcular puntuaciones basadas en palabras clave
+    const scores = {};
+    Object.keys(keywords).forEach(area => {
+      scores[area] = keywords[area].filter(keyword => 
+        lowerText.includes(keyword)
+      ).length;
+    });
+    
+    // Crear recomendaciones basadas en las puntuaciones
+    let topAreas = Object.entries(scores)
+      .filter(([area, score]) => score > 0)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 3)
+      .map(([area, score]) => ({ area, score }));
+    
+    // Si no hay coincidencias específicas, usar recomendaciones por defecto
+    if (topAreas.length === 0) {
+      topAreas = [
+        { area: 'cocina', score: 3 },
+        { area: 'living', score: 2 },
+        { area: 'dormitorio', score: 1 }
+      ];
+    }
     
     // Crear resultados
     const results = {
@@ -153,15 +185,16 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       allScores: scores
     };
     
-    // Crear datos de encuesta simulados
+    // Crear datos de encuesta más específicos basados en el análisis
     const surveyData = {
-      tipoVivienda: 'Detectado por voz',
-      estilo: 'Basado en tu consulta',
-      presupuesto: 'Variado',
-      prioridad: 'Personalizada'
+      categoria: getCategoryFromVoice(lowerText),
+      estiloProyecto: getStyleFromVoice(lowerText),
+      espacio: getSpaceFromVoice(lowerText),
+      inversion: getBudgetFromVoice(lowerText),
+      source: 'voice',
+      transcript: text
     };
     
-    // Guardar resultados inmediatamente sin confirmación por voz
     console.log('🎯 Voz detectada y analizada...');
     console.log('📊 Resultados:', results);
     console.log('📋 Datos de encuesta:', surveyData);
@@ -170,6 +203,56 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
     setVoiceResults(results);
     setVoiceSurveyData(surveyData);
     setIsProcessing(false);
+  };
+
+  // Función auxiliar para determinar categoría
+  const getCategoryFromVoice = (text) => {
+    if (text.includes('mueble') || text.includes('mobiliario') || text.includes('decoración') || text.includes('decoracion')) {
+      return 'muebles_decoracion';
+    }
+    if (text.includes('abertura') || text.includes('puerta') || text.includes('ventana') || text.includes('construcción') || text.includes('construccion')) {
+      return 'aberturas_construccion';
+    }
+    if (text.includes('interiorismo') || text.includes('proyecto') || text.includes('integral')) {
+      return 'interiorismo_integral';
+    }
+    return 'muebles_decoracion'; // default
+  };
+
+  // Función auxiliar para determinar estilo
+  const getStyleFromVoice = (text) => {
+    if (text.includes('personalizado') || text.includes('a medida') || text.includes('custom')) {
+      return 'personalizado';
+    }
+    if (text.includes('artesanal') || text.includes('sustentable') || text.includes('ecológico') || text.includes('ecologico')) {
+      return 'artesanal';
+    }
+    return 'estandar'; // default
+  };
+
+  // Función auxiliar para determinar espacio
+  const getSpaceFromVoice = (text) => {
+    if (text.includes('living') || text.includes('dormitorio') || text.includes('sala')) {
+      return 'living_dormitorio';
+    }
+    if (text.includes('cocina') || text.includes('comedor')) {
+      return 'cocina_comedor';
+    }
+    if (text.includes('exterior') || text.includes('jardín') || text.includes('jardin') || text.includes('terraza')) {
+      return 'accesos_aberturas_exterior';
+    }
+    return 'living_dormitorio'; // default
+  };
+
+  // Función auxiliar para determinar presupuesto
+  const getBudgetFromVoice = (text) => {
+    if (text.includes('económico') || text.includes('economico') || text.includes('barato') || text.includes('bajo costo')) {
+      return 'economico';
+    }
+    if (text.includes('premium') || text.includes('alta gama') || text.includes('lujo') || text.includes('caro')) {
+      return 'premium';
+    }
+    return 'medio'; // default
   };
 
   // Si está procesando, mostrar pantalla de carga
@@ -381,9 +464,9 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
   return (
     <div className="card">
       <div className="voice-input-container" style={{
-        minHeight: '80vh',
+        minHeight: window.innerWidth <= 768 ? '100vh' : '80vh',
         backgroundColor: '#f5f5f5',
-        padding: '20px',
+        padding: window.innerWidth <= 768 ? '15px' : '20px',
         fontFamily: 'Arial, sans-serif',
         maxWidth: '100%',
         margin: '0 auto',
@@ -394,12 +477,13 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       }}>
         <div className="voice-input-card" style={{
           backgroundColor: 'white',
-          borderRadius: '20px',
-          padding: '40px',
+          borderRadius: window.innerWidth <= 768 ? '15px' : '20px',
+          padding: window.innerWidth <= 768 ? '25px' : '40px',
           boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
           textAlign: 'center',
           maxWidth: '600px',
-          width: '100%'
+          width: '100%',
+          margin: window.innerWidth <= 768 ? '0 10px' : '0'
         }}>
           <div className="voice-icon" style={{
             fontSize: 'clamp(4rem, 10vw, 6rem)',
@@ -469,9 +553,11 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
           
           <div className="voice-controls" style={{
             display: 'flex',
-            gap: '15px',
+            gap: window.innerWidth <= 768 ? '10px' : '15px',
             justifyContent: 'center',
-            flexWrap: 'wrap'
+            flexWrap: 'wrap',
+            flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
+            alignItems: 'center'
           }}>
             <button 
               onClick={startVoiceRecognition}
@@ -480,13 +566,15 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
                 backgroundColor: isListening ? '#ccc' : '#4CAF50',
                 color: 'white',
                 border: 'none',
-                padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                padding: window.innerWidth <= 768 ? '12px 24px' : 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
                 borderRadius: '50px',
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                fontSize: window.innerWidth <= 768 ? '0.9rem' : 'clamp(1rem, 2.5vw, 1.2rem)',
                 fontWeight: 'bold',
                 cursor: isListening ? 'not-allowed' : 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)'
+                boxShadow: '0 4px 15px rgba(76, 175, 80, 0.3)',
+                width: window.innerWidth <= 768 ? '100%' : 'auto',
+                maxWidth: window.innerWidth <= 768 ? '250px' : 'none'
               }}
               onMouseOver={(e) => {
                 if (!isListening) {
@@ -516,24 +604,34 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
                 }
               }}
               style={{
-                backgroundColor: '#ff9800',
+                backgroundColor: voiceResults && voiceSurveyData ? '#4CAF50' : '#6c757d',
                 color: 'white',
                 border: 'none',
-                padding: 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
+                padding: window.innerWidth <= 768 ? '12px 24px' : 'clamp(15px, 3vw, 20px) clamp(30px, 5vw, 40px)',
                 borderRadius: '50px',
-                fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
+                fontSize: window.innerWidth <= 768 ? '0.9rem' : 'clamp(1rem, 2.5vw, 1.2rem)',
                 fontWeight: 'bold',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: '0 4px 15px rgba(255, 152, 0, 0.3)'
+                boxShadow: voiceResults && voiceSurveyData ? '0 4px 15px rgba(76, 175, 80, 0.3)' : '0 4px 15px rgba(108, 117, 125, 0.3)',
+                width: window.innerWidth <= 768 ? '100%' : 'auto',
+                maxWidth: window.innerWidth <= 768 ? '250px' : 'none'
               }}
               onMouseOver={(e) => {
                 e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(255, 152, 0, 0.4)';
+                if (voiceResults && voiceSurveyData) {
+                  e.target.style.boxShadow = '0 6px 20px rgba(76, 175, 80, 0.4)';
+                } else {
+                  e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
+                }
               }}
               onMouseOut={(e) => {
                 e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(255, 152, 0, 0.3)';
+                if (voiceResults && voiceSurveyData) {
+                  e.target.style.boxShadow = '0 4px 15px rgba(76, 175, 80, 0.3)';
+                } else {
+                  e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
+                }
               }}
             >
               {voiceResults && voiceSurveyData ? '🚀 Ver Resultados' : '← Volver'}
@@ -541,10 +639,12 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
           </div>
           
           <div style={{
-            marginTop: '30px',
-            padding: '20px',
+            marginTop: window.innerWidth <= 768 ? '20px' : '30px',
+            padding: window.innerWidth <= 768 ? '15px' : '20px',
             backgroundColor: '#f8f9fa',
-            borderRadius: '15px'
+            borderRadius: window.innerWidth <= 768 ? '12px' : '15px',
+            margin: window.innerWidth <= 768 ? '20px 10px 0 10px' : '30px auto 0 auto',
+            maxWidth: '500px'
           }}>
             <h3 style={{
               fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',

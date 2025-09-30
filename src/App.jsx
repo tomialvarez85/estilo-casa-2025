@@ -28,6 +28,7 @@ function App() {
     console.log('🎯 Función handleVoiceRecognition existe:', typeof handleVoiceRecognition);
     
     try {
+      console.log('🎯 Actualizando estados...');
       setSurveyData(voiceSurveyData);
       setResults(voiceResults);
       setCurrentStep('results');
@@ -41,6 +42,8 @@ function App() {
       setTimeout(() => {
         console.log('🎯 Verificación después de 100ms:');
         console.log('- currentStep debería ser "results"');
+        console.log('- surveyData actual:', surveyData);
+        console.log('- results actual:', results);
       }, 100);
     } catch (error) {
       console.error('❌ Error en handleVoiceRecognition:', error);
@@ -54,6 +57,12 @@ function App() {
   const backToWelcome = () => {
     setShowVoiceOption(false);
   };
+
+  // Mostrar resultados (prioridad alta)
+  if (currentStep === 'results') {
+    console.log('🎯 Renderizando Results con datos:', { results, surveyData });
+    return <Results results={results} surveyData={surveyData} onRestart={handleRestart} />;
+  }
 
   // Mostrar opción de entrada por voz
   if (showVoiceOption) {
@@ -93,19 +102,24 @@ function App() {
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '30px',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+              gap: window.innerWidth <= 768 ? '20px' : '30px',
               maxWidth: '900px',
-              margin: '0 auto'
+              margin: '0 auto',
+              padding: window.innerWidth <= 768 ? '0 10px' : '0'
             }}>
               {/* Opción de Encuesta */}
               <div style={{
                 backgroundColor: '#f8f9fa',
-                borderRadius: '20px',
-                padding: '30px',
+                borderRadius: window.innerWidth <= 768 ? '15px' : '20px',
+                padding: window.innerWidth <= 768 ? '20px' : '30px',
                 border: '3px solid #667eea',
                 transition: 'all 0.3s ease',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: window.innerWidth <= 768 ? 'auto' : '300px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
               onClick={() => setCurrentStep('survey')}
               onMouseOver={(e) => {
@@ -154,11 +168,15 @@ function App() {
               {/* Opción de Voz */}
               <div style={{
                 backgroundColor: '#f8f9fa',
-                borderRadius: '20px',
-                padding: '30px',
+                borderRadius: window.innerWidth <= 768 ? '15px' : '20px',
+                padding: window.innerWidth <= 768 ? '20px' : '30px',
                 border: '3px solid #9C27B0',
                 transition: 'all 0.3s ease',
-                cursor: 'pointer'
+                cursor: 'pointer',
+                minHeight: window.innerWidth <= 768 ? 'auto' : '300px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center'
               }}
               onClick={showVoiceInput}
               onMouseOver={(e) => {
@@ -206,11 +224,13 @@ function App() {
             </div>
 
             <div style={{
-              marginTop: '40px',
-              padding: '20px',
+              marginTop: window.innerWidth <= 768 ? '30px' : '40px',
+              padding: window.innerWidth <= 768 ? '15px' : '20px',
               backgroundColor: '#e3f2fd',
-              borderRadius: '15px',
-              border: '2px solid #2196F3'
+              borderRadius: window.innerWidth <= 768 ? '12px' : '15px',
+              border: '2px solid #2196F3',
+              margin: window.innerWidth <= 768 ? '30px 10px 0 10px' : '40px auto 0 auto',
+              maxWidth: '800px'
             }}>
               <h3 style={{
                 fontSize: 'clamp(1rem, 2.5vw, 1.2rem)',
@@ -237,11 +257,6 @@ function App() {
   // Mostrar encuesta
   if (currentStep === 'survey') {
     return <Survey onComplete={handleSurveyComplete} onBack={() => setCurrentStep('welcome')} />;
-  }
-
-  // Mostrar resultados
-  if (currentStep === 'results') {
-    return <Results results={results} surveyData={surveyData} onRestart={handleRestart} />;
   }
 
   return null;
