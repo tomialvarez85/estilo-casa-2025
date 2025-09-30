@@ -5,6 +5,23 @@ import { supabase } from '../supabaseClient';
 const Results = ({ results, surveyData, onRestart }) => {
   const navigate = useNavigate();
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [showFooter, setShowFooter] = useState(false);
+
+  // Manejar scroll para mostrar/ocultar footer
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Mostrar footer cuando el usuario haya scrolleado al menos 50% del contenido
+      const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
+      setShowFooter(scrollPercentage > 0.5);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
   
   // Debug logs
   console.log('🔍 Results component recibió:');
@@ -958,16 +975,20 @@ const Results = ({ results, surveyData, onRestart }) => {
             ))}
           </div>
 
-          <div className="footer" style={{
-            textAlign: 'center',
-            marginTop: '40px',
-            padding: '20px',
-            backgroundColor: 'white',
-            borderRadius: '15px',
-            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-            maxWidth: '800px',
-            margin: '40px auto 0 auto'
-          }}>
+          {showFooter && (
+            <div className="footer" style={{
+              textAlign: 'center',
+              marginTop: '40px',
+              padding: '20px',
+              backgroundColor: 'white',
+              borderRadius: '15px',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+              maxWidth: '800px',
+              margin: '40px auto 0 auto',
+              opacity: showFooter ? 1 : 0,
+              transform: showFooter ? 'translateY(0)' : 'translateY(20px)',
+              transition: 'opacity 0.3s ease, transform 0.3s ease'
+            }}>
             <p style={{
               color: '#666',
               fontSize: 'clamp(0.8rem, 2.5vw, 1rem)',
@@ -1021,6 +1042,7 @@ const Results = ({ results, surveyData, onRestart }) => {
               </button>
             </div>
           </div>
+          )}
         </div>
       </div>
     );
@@ -1154,12 +1176,16 @@ const Results = ({ results, surveyData, onRestart }) => {
           </div>
         )}
 
-        {/* Botón Volver */}
-        <div style={{ 
-          textAlign: 'center', 
-          marginTop: window.innerWidth <= 768 ? '20px' : '30px',
-          padding: window.innerWidth <= 768 ? '0 15px' : '0'
-        }}>
+        {/* Botón Volver - Solo visible con scroll */}
+        {showFooter && (
+          <div style={{ 
+            textAlign: 'center', 
+            marginTop: window.innerWidth <= 768 ? '20px' : '30px',
+            padding: window.innerWidth <= 768 ? '0 15px' : '0',
+            opacity: showFooter ? 1 : 0,
+            transform: showFooter ? 'translateY(0)' : 'translateY(20px)',
+            transition: 'opacity 0.3s ease, transform 0.3s ease'
+          }}>
           <button
             className="btn"
             onClick={onRestart}
@@ -1189,6 +1215,7 @@ const Results = ({ results, surveyData, onRestart }) => {
             ← Volver
           </button>
         </div>
+        )}
 
 
 
