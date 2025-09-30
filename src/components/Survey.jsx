@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
 
 const Survey = ({ onComplete, onBack }) => {
   const [answers, setAnswers] = useState({});
+  const [showFooter, setShowFooter] = useState(false);
 
   const questions = [
     {
@@ -142,6 +143,22 @@ const Survey = ({ onComplete, onBack }) => {
   const progress = (answeredCount / totalQuestions) * 100;
   const isMobile = window.innerWidth <= 768;
   const isNotebook = window.innerWidth <= 1280 && window.innerWidth > 768;
+
+  // Manejar scroll para mostrar/ocultar footer
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      const windowHeight = window.innerHeight;
+      const documentHeight = document.documentElement.scrollHeight;
+      
+      // Mostrar footer solo cuando el usuario llegue al final (95% del contenido)
+      const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
+      setShowFooter(scrollPercentage > 0.95);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="card compact-survey" style={{
@@ -360,18 +377,22 @@ const Survey = ({ onComplete, onBack }) => {
         backgroundColor: 'transparent'
       }}></div>
       
-      {/* Footer - Diseño diferente para móvil vs desktop */}
-      <div className="survey-footer" style={{
-        position: isMobile ? 'sticky' : isNotebook ? 'sticky' : 'static',
-        bottom: 0,
-        backgroundColor: 'white',
-        padding: isMobile ? '15px 0' : isNotebook ? '10px 0' : '0',
-        borderTop: isMobile ? '2px solid #e9ecef' : isNotebook ? '2px solid #e9ecef' : 'none',
-        zIndex: 100,
-        maxWidth: '100%',
-        margin: isMobile ? '0' : isNotebook ? '0' : '0 15px 15px 15px',
-        marginTop: isMobile ? '30px' : isNotebook ? '20px' : '0'
-      }}>
+      {/* Footer - Solo visible al final del scroll */}
+      {showFooter && (
+        <div className="survey-footer" style={{
+          position: isMobile ? 'sticky' : isNotebook ? 'sticky' : 'static',
+          bottom: 0,
+          backgroundColor: 'white',
+          padding: isMobile ? '15px 0' : isNotebook ? '10px 0' : '0',
+          borderTop: isMobile ? '2px solid #e9ecef' : isNotebook ? '2px solid #e9ecef' : 'none',
+          zIndex: 100,
+          maxWidth: '100%',
+          margin: isMobile ? '0' : isNotebook ? '0' : '0 15px 15px 15px',
+          marginTop: isMobile ? '30px' : isNotebook ? '20px' : '0',
+          opacity: showFooter ? 1 : 0,
+          transform: showFooter ? 'translateY(0)' : 'translateY(20px)',
+          transition: 'opacity 0.3s ease, transform 0.3s ease'
+        }}>
         <div style={{
           display: 'flex',
           gap: 'clamp(10px, 3vw, 20px)',
@@ -489,6 +510,7 @@ const Survey = ({ onComplete, onBack }) => {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 };
