@@ -148,7 +148,7 @@ const Survey = ({ onComplete, onBack }) => {
       minHeight: '100vh',
       display: 'flex',
       flexDirection: 'column',
-      paddingBottom: isMobile ? '100px' : isNotebook ? '120px' : '25px',
+      paddingBottom: isMobile ? '150px' : isNotebook ? '120px' : '25px',
       maxWidth: isMobile ? '100%' : isNotebook ? '100%' : '1100px',
       margin: '0 auto',
       width: '100%',
@@ -220,7 +220,7 @@ const Survey = ({ onComplete, onBack }) => {
           ? 'clamp(10px, 2vw, 30px)'
           : isNotebook ? '15px' : '0 25px 20px 25px',
         display: 'grid',
-        gap: isMobile ? 'clamp(20px, 4vw, 40px)' : isNotebook ? '18px' : '15px',
+        gap: isMobile ? 'clamp(40px, 6vw, 60px)' : isNotebook ? '25px' : '20px',
         gridTemplateColumns: isMobile ? '1fr' : isNotebook ? '1fr' : 'repeat(2, 1fr)',
         maxWidth: '100%',
         backgroundColor: isMobile ? 'transparent' : 'white',
@@ -237,7 +237,7 @@ const Survey = ({ onComplete, onBack }) => {
             border: isMobile ? '1px solid #e9ecef' : 'none',
             transition: 'transform 0.2s ease, box-shadow 0.2s ease',
             cursor: 'pointer',
-            minHeight: isMobile ? '200px' : 'auto',
+            minHeight: isMobile ? '280px' : 'auto',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'space-between',
@@ -246,7 +246,7 @@ const Survey = ({ onComplete, onBack }) => {
             paddingBottom: !isMobile ? (isNotebook ? '8px' : '15px') : 'clamp(20px, 4vw, 30px)'
           }}>
             <div className="compact-question-header" style={{
-              marginBottom: isMobile ? 'clamp(15px, 3vw, 25px)' : '12px'
+              marginBottom: isMobile ? 'clamp(25px, 4vw, 35px)' : '15px'
             }}>
               <div style={{
                 display: 'flex',
@@ -278,7 +278,7 @@ const Survey = ({ onComplete, onBack }) => {
             
             <div className="compact-options-grid" style={{
               display: 'grid',
-              gap: isMobile ? 'clamp(8px, 2vw, 15px)' : '8px',
+              gap: isMobile ? 'clamp(12px, 3vw, 20px)' : '12px',
               gridTemplateColumns: isMobile 
                 ? 'repeat(auto-fit, minmax(120px, 1fr))'
                 : question.options.length === 3 
@@ -308,7 +308,7 @@ const Survey = ({ onComplete, onBack }) => {
                     alignItems: 'center',
                     gap: isMobile ? 'clamp(5px, 1.5vw, 10px)' : '4px',
                     textAlign: 'center',
-                    minHeight: isMobile ? 'clamp(80px, 15vw, 100px)' : '55px',
+                    minHeight: isMobile ? 'clamp(100px, 18vw, 120px)' : '65px',
                     justifyContent: 'center',
                     boxShadow: answers[question.id] === option.value 
                       ? (isMobile 
@@ -354,16 +354,23 @@ const Survey = ({ onComplete, onBack }) => {
         ))}
       </div>
       
+      {/* Espaciado adicional para evitar superposición en móviles */}
+      <div style={{
+        height: isMobile ? '80px' : isNotebook ? '60px' : '40px',
+        backgroundColor: 'transparent'
+      }}></div>
+      
       {/* Footer - Diseño diferente para móvil vs desktop */}
       <div className="survey-footer" style={{
         position: isMobile ? 'sticky' : isNotebook ? 'sticky' : 'static',
         bottom: 0,
         backgroundColor: 'white',
-        padding: isMobile ? '10px 0' : isNotebook ? '10px 0' : '0',
+        padding: isMobile ? '15px 0' : isNotebook ? '10px 0' : '0',
         borderTop: isMobile ? '2px solid #e9ecef' : isNotebook ? '2px solid #e9ecef' : 'none',
         zIndex: 100,
         maxWidth: '100%',
-        margin: isMobile ? '0' : isNotebook ? '0' : '0 15px 15px 15px'
+        margin: isMobile ? '0' : isNotebook ? '0' : '0 15px 15px 15px',
+        marginTop: isMobile ? '30px' : isNotebook ? '20px' : '0'
       }}>
         <div style={{
           display: 'flex',
