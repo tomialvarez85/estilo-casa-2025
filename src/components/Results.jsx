@@ -1171,7 +1171,7 @@ const Results = ({ results, surveyData, onRestart }) => {
                 minWidth: window.innerWidth <= 768 ? '200px' : '250px'
               }}
             >
-              🔎 Ver "Te podría interesar"
+              🔎 Te podría interesar
             </button>
           </div>
         )}

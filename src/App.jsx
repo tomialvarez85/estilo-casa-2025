@@ -96,7 +96,7 @@ function App() {
               maxWidth: '800px',
               margin: '0 auto 40px auto'
             }}>
-              Descubre los pabellones perfectos para tus necesidades. 
+              Descubre los stands acorde a tus necesidades. 
               Te ayudaremos a encontrar exactamente lo que buscas en nuestro evento.
             </p>
 
