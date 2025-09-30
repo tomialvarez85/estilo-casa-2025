@@ -14,9 +14,9 @@ const Results = ({ results, surveyData, onRestart }) => {
       const windowHeight = window.innerHeight;
       const documentHeight = document.documentElement.scrollHeight;
       
-      // Mostrar footer cuando el usuario haya scrolleado al menos 50% del contenido
+      // Mostrar footer solo cuando el usuario llegue al final (95% del contenido)
       const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
-      setShowFooter(scrollPercentage > 0.5);
+      setShowFooter(scrollPercentage > 0.95);
     };
 
     window.addEventListener('scroll', handleScroll);
