@@ -116,144 +116,162 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
     }
   };
 
-  // Función para analizar el texto de voz y generar recomendaciones
+  // Función para limpiar el texto de voz removiendo palabras innecesarias
+  const cleanVoiceText = (text) => {
+    const wordsToRemove = [
+      'busco', 'necesito', 'quiero', 'deseo', 'me gustaría', 'me gustaria',
+      'estoy buscando', 'vengo a buscar', 'vengo por', 'necesito encontrar',
+      'quiero encontrar', 'buscar', 'necesitar', 'desear', 'querer',
+      'por favor', 'porfavor', 'gracias', 'hola', 'buenos días', 'buenas tardes',
+      'buenas noches', 'saludos', 'hey', 'hi', 'hello',
+      'me interesa', 'me interesan', 'estoy interesado', 'estoy interesada',
+      'vengo a ver', 'vengo a conocer', 'quiero ver', 'deseo ver',
+      'me gusta', 'me gustan', 'prefiero', 'prefiero ver'
+    ];
+    
+    let cleanedText = text.toLowerCase().trim();
+    
+    // Remover palabras innecesarias
+    wordsToRemove.forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      cleanedText = cleanedText.replace(regex, '').trim();
+    });
+    
+    // Limpiar espacios múltiples
+    cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+    
+    console.log('🧹 Texto original:', text);
+    console.log('🧹 Texto limpio:', cleanedText);
+    
+    return cleanedText;
+  };
+
+  // Función para analizar el texto de voz y buscar en la base de datos
   const analyzeVoiceInput = async (text) => {
     console.log('🎯 Analizando texto de voz:', text);
     
-    const lowerText = text.toLowerCase();
+    // Limpiar el texto removiendo palabras innecesarias
+    const cleanedText = cleanVoiceText(text);
     
-    // Palabras clave más específicas para cada área
-    const keywords = {
-      cocina: [
-        'cocina', 'electrodomésticos', 'hornos', 'heladeras', 'microondas', 'cocinar', 'comida', 
-        'utensilios', 'vajilla', 'cubiertos', 'platos', 'ollas', 'sartenes', 'horno', 'heladera',
-        'cafetera', 'tostadora', 'licuadora', 'procesadora', 'cocina', 'mesada', 'bajo mesada'
-      ],
-      living: [
-        'living', 'comedor', 'sala', 'sofá', 'mesa', 'sillas', 'decoración', 'muebles',
-        'sillón', 'sillon', 'mesa de centro', 'rack', 'tv', 'televisión', 'entretenimiento',
-        'relax', 'descanso', 'social', 'reuniones', 'familia'
-      ],
-      dormitorio: [
-        'dormitorio', 'cama', 'colchón', 'colchon', 'sommier', 'somier', 'ropa de cama',
-        'armario', 'ropero', 'descanso', 'dormir', 'almohadas', 'sábanas', 'cubrecamas',
-        'noche', 'descanso', 'relax', 'sueño'
-      ],
-      bano: [
-        'baño', 'bano', 'sanitarios', 'ducha', 'grifería', 'griferia', 'toilet', 'lavatorio',
-        'accesorios', 'toallas', 'espejos', 'mampara', 'bañera', 'bañadera', 'higiene'
-      ],
-      oficina: [
-        'oficina', 'escritorio', 'silla', 'computadora', 'trabajo', 'estudio', 'muebles de oficina',
-        'silla ergonómica', 'silla ergonomica', 'escritorio', 'estantería', 'estanteria',
-        'archivo', 'organización', 'organizacion', 'productividad'
-      ],
-      exterior: [
-        'jardín', 'jardin', 'exterior', 'terraza', 'balcón', 'balcon', 'muebles de jardín',
-        'plantas', 'decoración exterior', 'decoracion exterior', 'parrilla', 'asador',
-        'piscina', 'piletas', 'outdoor', 'aire libre'
-      ]
-    };
+    // Si el texto queda muy corto después de limpiar, usar el texto original
+    const searchText = cleanedText.length < 3 ? text : cleanedText;
     
-    // Calcular puntuaciones basadas en palabras clave
-    const scores = {};
-    Object.keys(keywords).forEach(area => {
-      scores[area] = keywords[area].filter(keyword => 
-        lowerText.includes(keyword)
-      ).length;
-    });
-    
-    // Crear recomendaciones basadas en las puntuaciones
-    let topAreas = Object.entries(scores)
-      .filter(([area, score]) => score > 0)
-      .sort(([,a], [,b]) => b - a)
-      .slice(0, 3)
-      .map(([area, score]) => ({ area, score }));
-    
-    // Si no hay coincidencias específicas, usar recomendaciones por defecto
-    if (topAreas.length === 0) {
-      topAreas = [
-        { area: 'cocina', score: 3 },
-        { area: 'living', score: 2 },
-        { area: 'dormitorio', score: 1 }
-      ];
+    try {
+      // Buscar empresas que coincidan con el texto limpio en las columnas "activity" y "name"
+      const { data: companies, error } = await supabase
+        .from('companies')
+        .select('*')
+        .or(`activity.ilike.%${searchText}%,name.ilike.%${searchText}%`);
+      
+      if (error) {
+        console.error('❌ Error al buscar en la base de datos:', error);
+        // Fallback: usar búsqueda más amplia
+        const { data: fallbackCompanies } = await supabase
+          .from('companies')
+          .select('*')
+          .limit(10);
+        
+        if (fallbackCompanies) {
+          const results = {
+            topAreas: [
+              { area: 'general', score: 3 }
+            ],
+            allScores: { general: 3 },
+            companies: fallbackCompanies
+          };
+          
+          const surveyData = {
+            categoria: 'muebles_decoracion',
+            estiloProyecto: 'estandar',
+            espacio: 'living_dormitorio',
+            inversion: 'medio',
+            source: 'voice',
+            transcript: text
+          };
+          
+          setVoiceResults(results);
+          setVoiceSurveyData(surveyData);
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
+      if (companies && companies.length > 0) {
+        console.log('✅ Encontradas empresas coincidentes:', companies.length);
+        
+        // Crear resultados basados en las empresas encontradas
+        const results = {
+          topAreas: [
+            { area: 'voice_search', score: companies.length }
+          ],
+          allScores: { voice_search: companies.length },
+          companies: companies
+        };
+        
+        const surveyData = {
+          categoria: 'muebles_decoracion',
+          estiloProyecto: 'estandar',
+          espacio: 'living_dormitorio',
+          inversion: 'medio',
+          source: 'voice',
+          transcript: text
+        };
+        
+        console.log('🎯 Voz detectada y analizada...');
+        console.log('📊 Resultados:', results);
+        console.log('📋 Datos de encuesta:', surveyData);
+        
+        setVoiceResults(results);
+        setVoiceSurveyData(surveyData);
+        setIsProcessing(false);
+      } else {
+        console.log('⚠️ No se encontraron empresas coincidentes');
+        
+        // No mostrar nada si no hay coincidencias
+        const results = {
+          topAreas: [],
+          allScores: {},
+          companies: []
+        };
+        
+        const surveyData = {
+          categoria: 'muebles_decoracion',
+          estiloProyecto: 'estandar',
+          espacio: 'living_dormitorio',
+          inversion: 'medio',
+          source: 'voice',
+          transcript: text
+        };
+        
+        setVoiceResults(results);
+        setVoiceSurveyData(surveyData);
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error('❌ Error en la búsqueda:', error);
+      
+      // No mostrar nada en caso de error
+      const results = {
+        topAreas: [],
+        allScores: {},
+        companies: []
+      };
+      
+      const surveyData = {
+        categoria: 'muebles_decoracion',
+        estiloProyecto: 'estandar',
+        espacio: 'living_dormitorio',
+        inversion: 'medio',
+        source: 'voice',
+        transcript: text
+      };
+      
+      setVoiceResults(results);
+      setVoiceSurveyData(surveyData);
+      setIsProcessing(false);
     }
-    
-    // Crear resultados
-    const results = {
-      topAreas,
-      allScores: scores
-    };
-    
-    // Crear datos de encuesta más específicos basados en el análisis
-    const surveyData = {
-      categoria: getCategoryFromVoice(lowerText),
-      estiloProyecto: getStyleFromVoice(lowerText),
-      espacio: getSpaceFromVoice(lowerText),
-      inversion: getBudgetFromVoice(lowerText),
-      source: 'voice',
-      transcript: text
-    };
-    
-    console.log('🎯 Voz detectada y analizada...');
-    console.log('📊 Resultados:', results);
-    console.log('📋 Datos de encuesta:', surveyData);
-    
-    // Guardar resultados para el botón continuar
-    setVoiceResults(results);
-    setVoiceSurveyData(surveyData);
-    setIsProcessing(false);
   };
 
-  // Función auxiliar para determinar categoría
-  const getCategoryFromVoice = (text) => {
-    if (text.includes('mueble') || text.includes('mobiliario') || text.includes('decoración') || text.includes('decoracion')) {
-      return 'muebles_decoracion';
-    }
-    if (text.includes('abertura') || text.includes('puerta') || text.includes('ventana') || text.includes('construcción') || text.includes('construccion')) {
-      return 'aberturas_construccion';
-    }
-    if (text.includes('interiorismo') || text.includes('proyecto') || text.includes('integral')) {
-      return 'interiorismo_integral';
-    }
-    return 'muebles_decoracion'; // default
-  };
-
-  // Función auxiliar para determinar estilo
-  const getStyleFromVoice = (text) => {
-    if (text.includes('personalizado') || text.includes('a medida') || text.includes('custom')) {
-      return 'personalizado';
-    }
-    if (text.includes('artesanal') || text.includes('sustentable') || text.includes('ecológico') || text.includes('ecologico')) {
-      return 'artesanal';
-    }
-    return 'estandar'; // default
-  };
-
-  // Función auxiliar para determinar espacio
-  const getSpaceFromVoice = (text) => {
-    if (text.includes('living') || text.includes('dormitorio') || text.includes('sala')) {
-      return 'living_dormitorio';
-    }
-    if (text.includes('cocina') || text.includes('comedor')) {
-      return 'cocina_comedor';
-    }
-    if (text.includes('exterior') || text.includes('jardín') || text.includes('jardin') || text.includes('terraza')) {
-      return 'accesos_aberturas_exterior';
-    }
-    return 'living_dormitorio'; // default
-  };
-
-  // Función auxiliar para determinar presupuesto
-  const getBudgetFromVoice = (text) => {
-    if (text.includes('económico') || text.includes('economico') || text.includes('barato') || text.includes('bajo costo')) {
-      return 'economico';
-    }
-    if (text.includes('premium') || text.includes('alta gama') || text.includes('lujo') || text.includes('caro')) {
-      return 'premium';
-    }
-    return 'medio'; // default
-  };
 
   // Si está procesando, mostrar pantalla de carga
   if (isProcessing) {

@@ -150,11 +150,33 @@ const Results = ({ results, surveyData, onRestart }) => {
   }, []);
 
   useEffect(() => {
-    if (!companies || companies.length === 0 || !surveyData) {
+    console.log('🚀 useEffect INICIADO');
+    
+    // Si los resultados vienen de búsqueda por voz y contienen empresas directamente
+    if (results && results.companies && results.companies.length > 0) {
+      console.log('🎤 Mostrando resultados de búsqueda por voz:', results.companies);
+      setRecommendedStands(results.companies);
+      setAlsoInteresting([]);
+      return;
+    }
+
+    // Si es búsqueda por voz pero no hay empresas encontradas, no mostrar nada
+    if (results && results.companies && results.companies.length === 0 && surveyData && surveyData.source === 'voice') {
+      console.log('🎤 Búsqueda por voz sin resultados, no mostrar nada');
       setRecommendedStands([]);
       setAlsoInteresting([]);
       return;
     }
+
+    // Si no hay datos básicos, no procesar
+    if (!companies || companies.length === 0 || !surveyData) {
+      console.log('⚠️ Faltan datos básicos');
+      setRecommendedStands([]);
+      setAlsoInteresting([]);
+      return;
+    }
+
+    console.log('📊 Procesando encuesta tradicional...');
 
     // Mapeo de palabras clave por respuesta
     const keywordsByAnswer = {
@@ -230,7 +252,9 @@ const Results = ({ results, surveyData, onRestart }) => {
       .sort((a, b) => b.hits - a.hits)
       .slice(0, 6);
     setAlsoInteresting(maybeInteresting);
+    console.log('✅ Procesamiento completado');
   }, [companies, surveyData, results]);
+
 
   // Función para inicializar el reconocimiento de voz
   const initializeSpeechRecognition = () => {
@@ -1075,7 +1099,7 @@ const Results = ({ results, surveyData, onRestart }) => {
         <div className="card" style={{ marginTop: '20px' }}>
           {recommendedStands.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#666' }}>
-              No encontramos coincidencias directas. Te sugerimos empezar por las áreas destacadas arriba.
+              No encontramos coincidencias directas. Te sugerimos volver a realizar la búsqueda.
             </p>
           ) : (
             <div className="recommendations" style={{ marginTop: 10 }}>
