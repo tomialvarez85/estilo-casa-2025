@@ -1102,7 +1102,14 @@ const Results = ({ results, surveyData, onRestart }) => {
               No encontramos coincidencias directas. Te sugerimos volver a realizar la búsqueda.
             </p>
           ) : (
-            <div className="recommendations" style={{ marginTop: 10 }}>
+            <div className="recommendations" style={{ 
+              marginTop: 10,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: window.innerWidth <= 768 ? 'center' : 'stretch',
+              maxWidth: window.innerWidth <= 768 ? '100%' : 'none',
+              padding: window.innerWidth <= 768 ? '0 10px' : '0'
+            }}>
               {recommendedStands.map((c, idx) => (
                 <div 
                   key={c.name + c.stand_number} 
@@ -1115,7 +1122,9 @@ const Results = ({ results, surveyData, onRestart }) => {
                     marginBottom: window.innerWidth <= 768 ? '10px' : '15px',
                     backgroundColor: '#f8f9fa',
                     borderRadius: window.innerWidth <= 768 ? '8px' : '12px',
-                    border: '1px solid #e9ecef'
+                    border: '1px solid #e9ecef',
+                    width: window.innerWidth <= 768 ? '100%' : 'auto',
+                    maxWidth: window.innerWidth <= 768 ? '400px' : 'none'
                   }}
                 >
                   <div style={{ 
