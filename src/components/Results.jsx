@@ -1078,7 +1078,12 @@ const Results = ({ results, surveyData, onRestart }) => {
       <div className="result-container" style={{
         maxWidth: '100%',
         margin: '0 auto',
-        padding: '20px'
+        padding: '20px',
+        minHeight: window.innerWidth <= 768 ? '100vh' : 'auto',
+        display: window.innerWidth <= 768 ? 'flex' : 'block',
+        flexDirection: window.innerWidth <= 768 ? 'column' : 'initial',
+        justifyContent: window.innerWidth <= 768 ? 'center' : 'initial',
+        alignItems: window.innerWidth <= 768 ? 'center' : 'initial'
       }}>
         {!showOnlyAlso && (
         <h1 style={{
@@ -1096,7 +1101,11 @@ const Results = ({ results, surveyData, onRestart }) => {
 
         {/* Sugerencias de Stands (basado en respuestas) */}
         {!showOnlyAlso && (
-        <div className="card" style={{ marginTop: '20px' }}>
+        <div className="card" style={{ 
+          marginTop: '20px',
+          width: window.innerWidth <= 768 ? '100%' : 'auto',
+          maxWidth: window.innerWidth <= 768 ? '400px' : 'none'
+        }}>
           {recommendedStands.length === 0 ? (
             <p style={{ textAlign: 'center', color: '#666' }}>
               No encontramos coincidencias directas. Te sugerimos volver a realizar la búsqueda.
