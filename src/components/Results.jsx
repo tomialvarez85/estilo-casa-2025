@@ -886,11 +886,12 @@ const Results = ({ results, surveyData, onRestart }) => {
                 color: '#666',
                 lineHeight: '1.6'
               }}>
-                <li>"Busco muebles para la cocina"</li>
-                <li>"Necesito decoración para el living"</li>
-                <li>"Quiero renovar el dormitorio"</li>
-                <li>"Busco electrodomésticos"</li>
-                <li>"Necesito muebles para el jardín"</li>
+                <li>"Busco amoblamientos de cocina"</li>
+                <li>"Necesito muebles de madera"</li>
+                <li>"Quiero colchones y sommier"</li>
+                <li>"Busco aberturas de aluminio"</li>
+                <li>"Necesito muebles de jardín"</li>
+                <li>"Busco carpintería a medida"</li>
               </ul>
             </div>
           </div>
