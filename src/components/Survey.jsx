@@ -144,35 +144,10 @@ const Survey = ({ onComplete, onBack }) => {
   const isMobile = window.innerWidth <= 768;
   const isNotebook = window.innerWidth <= 1280 && window.innerWidth > 768;
 
-  // Manejar scroll para mostrar/ocultar footer
+  // Footer siempre visible
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const windowHeight = window.innerHeight;
-      const documentHeight = document.documentElement.scrollHeight;
-      
-      // En móviles, mostrar footer más temprano y con lógica diferente
-      if (isMobile) {
-        // En móvil, mostrar footer cuando se haya scrolleado al menos 200px
-        // o cuando esté cerca del final (80% en lugar de 95%)
-        const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
-        setShowFooter(scrollTop > 200 || scrollPercentage > 0.8);
-      } else {
-        // En desktop, mantener la lógica original
-        const scrollPercentage = (scrollTop + windowHeight) / documentHeight;
-        setShowFooter(scrollPercentage > 0.95);
-      }
-    };
-
-    // También mostrar footer inmediatamente si todas las preguntas están respondidas
-    // y el usuario está en la última pregunta
-    if (answeredCount === totalQuestions) {
-      setShowFooter(true);
-    }
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [isMobile, answeredCount, totalQuestions]);
+    setShowFooter(true);
+  }, []);
 
   return (
     <div className="card compact-survey" style={{
@@ -391,8 +366,8 @@ const Survey = ({ onComplete, onBack }) => {
         backgroundColor: 'transparent'
       }}></div>
       
-      {/* Footer - Solo visible al final del scroll o cuando esté completa */}
-      {(showFooter || answeredCount === totalQuestions) && (
+      {/* Footer - Siempre visible */}
+      {showFooter && (
         <div className="survey-footer" style={{
           position: isMobile ? 'sticky' : isNotebook ? 'sticky' : 'static',
           bottom: 0,
