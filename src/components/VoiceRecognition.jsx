@@ -679,7 +679,6 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
             }}>
               <li>"Busco amoblamientos de cocina"</li>
               <li>"Necesito muebles de madera"</li>
-              <li>"Quiero colchones y sommier"</li>
               <li>"Busco aberturas de aluminio"</li>
               <li>"Necesito muebles de jardín"</li>
               <li>"Busco carpintería a medida"</li>
