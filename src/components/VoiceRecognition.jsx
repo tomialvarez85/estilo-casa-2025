@@ -126,7 +126,12 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       'buenas noches', 'saludos', 'hey', 'hi', 'hello',
       'me interesa', 'me interesan', 'estoy interesado', 'estoy interesada',
       'vengo a ver', 'vengo a conocer', 'quiero ver', 'deseo ver',
-      'me gusta', 'me gustan', 'prefiero', 'prefiero ver'
+      'me gusta', 'me gustan', 'prefiero', 'prefiero ver',
+      'para', 'del', 'de', 'la', 'el', 'en', 'con', 'por', 'un', 'una',
+      'los', 'las', 'al', 'es', 'se', 'le', 'lo', 'te', 'me', 'nos', 'os',
+      'que', 'como', 'cuando', 'donde', 'porque', 'si', 'no', 'sí',
+      'muy', 'mas', 'más', 'menos', 'poco', 'mucho', 'todo', 'toda',
+      'este', 'esta', 'estos', 'estas', 'aquel', 'aquella', 'aquellos', 'aquellas'
     ];
     
     let cleanedText = text.toLowerCase().trim();
@@ -137,8 +142,9 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
       cleanedText = cleanedText.replace(regex, '').trim();
     });
     
-    // Limpiar espacios múltiples
+    // Limpiar espacios múltiples y caracteres especiales
     cleanedText = cleanedText.replace(/\s+/g, ' ').trim();
+    cleanedText = cleanedText.replace(/[.,;:!?¿¡]/g, '').trim();
     
     console.log('🧹 Texto original:', text);
     console.log('🧹 Texto limpio:', cleanedText);
@@ -157,14 +163,13 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
     const searchText = cleanedText.length < 3 ? text : cleanedText;
     
     try {
-      // Buscar empresas que coincidan con el texto limpio en las columnas "activity" y "name"
-      const { data: companies, error } = await supabase
+      // Obtener todas las empresas de la base de datos
+      const { data: allCompanies, error: fetchError } = await supabase
         .from('companies')
-        .select('*')
-        .or(`activity.ilike.%${searchText}%,name.ilike.%${searchText}%`);
+        .select('*');
       
-      if (error) {
-        console.error('❌ Error al buscar en la base de datos:', error);
+      if (fetchError) {
+        console.error('❌ Error al obtener empresas:', fetchError);
         // Fallback: usar búsqueda más amplia
         const { data: fallbackCompanies } = await supabase
           .from('companies')
@@ -196,38 +201,110 @@ const VoiceRecognition = ({ onComplete, onBack }) => {
         }
       }
       
-      if (companies && companies.length > 0) {
-        console.log('✅ Encontradas empresas coincidentes:', companies.length);
+      if (allCompanies && allCompanies.length > 0) {
+        console.log('📊 Total de empresas en la base de datos:', allCompanies.length);
         
-        // Crear resultados basados en las empresas encontradas
-        const results = {
-          topAreas: [
-            { area: 'voice_search', score: companies.length }
-          ],
-          allScores: { voice_search: companies.length },
-          companies: companies
-        };
+        // Dividir el texto en palabras individuales
+        const words = searchText.toLowerCase().split(/\s+/).filter(word => word.length > 2);
+        console.log('🔍 Palabras a buscar:', words);
         
-        const surveyData = {
-          categoria: 'muebles_decoracion',
-          estiloProyecto: 'estandar',
-          espacio: 'living_dormitorio',
-          inversion: 'medio',
-          source: 'voice',
-          transcript: text
-        };
+        // Buscar coincidencias palabra por palabra en la columna activity
+        const matchingCompanies = [];
         
-        console.log('🎯 Voz detectada y analizada...');
-        console.log('📊 Resultados:', results);
-        console.log('📋 Datos de encuesta:', surveyData);
+        allCompanies.forEach(company => {
+          const activityText = (company.activity || '').toLowerCase();
+          const nameText = (company.name || '').toLowerCase();
+          
+          // Contar cuántas palabras del usuario coinciden con la actividad
+          let matchCount = 0;
+          let matchedWords = [];
+          
+          words.forEach(word => {
+            if (activityText.includes(word) || nameText.includes(word)) {
+              matchCount++;
+              matchedWords.push(word);
+            }
+          });
+          
+          // Si hay al menos una coincidencia, incluir la empresa
+          if (matchCount > 0) {
+            matchingCompanies.push({
+              ...company,
+              matchCount,
+              matchedWords,
+              relevanceScore: matchCount / words.length // Puntuación de relevancia
+            });
+          }
+        });
         
-        setVoiceResults(results);
-        setVoiceSurveyData(surveyData);
-        setIsProcessing(false);
+        // Ordenar por relevancia (más coincidencias primero)
+        matchingCompanies.sort((a, b) => {
+          if (b.matchCount !== a.matchCount) {
+            return b.matchCount - a.matchCount;
+          }
+          return b.relevanceScore - a.relevanceScore;
+        });
+        
+        console.log('✅ Empresas con coincidencias encontradas:', matchingCompanies.length);
+        console.log('🎯 Coincidencias por empresa:', matchingCompanies.map(c => ({
+          name: c.name,
+          matchCount: c.matchCount,
+          matchedWords: c.matchedWords
+        })));
+        
+        if (matchingCompanies.length > 0) {
+          // Crear resultados basados en las empresas encontradas
+          const results = {
+            topAreas: [
+              { area: 'voice_search', score: matchingCompanies.length }
+            ],
+            allScores: { voice_search: matchingCompanies.length },
+            companies: matchingCompanies
+          };
+          
+          const surveyData = {
+            categoria: 'muebles_decoracion',
+            estiloProyecto: 'estandar',
+            espacio: 'living_dormitorio',
+            inversion: 'medio',
+            source: 'voice',
+            transcript: text
+          };
+          
+          console.log('🎯 Voz detectada y analizada...');
+          console.log('📊 Resultados:', results);
+          console.log('📋 Datos de encuesta:', surveyData);
+          
+          setVoiceResults(results);
+          setVoiceSurveyData(surveyData);
+          setIsProcessing(false);
+        } else {
+          console.log('⚠️ No se encontraron empresas coincidentes');
+          
+          // No mostrar nada si no hay coincidencias
+          const results = {
+            topAreas: [],
+            allScores: {},
+            companies: []
+          };
+          
+          const surveyData = {
+            categoria: 'muebles_decoracion',
+            estiloProyecto: 'estandar',
+            espacio: 'living_dormitorio',
+            inversion: 'medio',
+            source: 'voice',
+            transcript: text
+          };
+          
+          setVoiceResults(results);
+          setVoiceSurveyData(surveyData);
+          setIsProcessing(false);
+        }
       } else {
-        console.log('⚠️ No se encontraron empresas coincidentes');
+        console.log('⚠️ No hay empresas en la base de datos');
         
-        // No mostrar nada si no hay coincidencias
+        // No mostrar nada si no hay empresas
         const results = {
           topAreas: [],
           allScores: {},
